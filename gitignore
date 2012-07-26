@@ -1,0 +1,11 @@
+#git
+.subgit
+.svn
+# emacs
+.emacs.desktop*
+*~
+*.elc
+#python
+*.pyc
+*.pyo
+build/

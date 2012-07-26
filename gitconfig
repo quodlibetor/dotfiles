@@ -1,0 +1,24 @@
+[alias]
+	st = status
+	s = status --short
+	ci = commit
+	co = checkout
+	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+	lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative --all
+	lgs = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15
+	lgsa = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15 --all
+	ix = diff --cached
+	stash-unapply = !git stash show -p | git apply --reverse
+	root = !pwd
+	dcommit = svn dcommit
+
+[color]
+	ui = true
+[help]
+	autocorrect = 1
+[user]
+	name = Brandon W Maister
+	email = bmaister@advance.net
+[core]
+	editor = vim
+	excludesfile = /home/bwm/.gitignore

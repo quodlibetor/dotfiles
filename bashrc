@@ -14,6 +14,8 @@ else
 	PYTHONPATH="$HOME/.local/lib/python2.6/site-packages/:$PYTHONPATH"
 fi
 
+PYTHONSTARTUP="$HOME/.pythonrc"
+
 # User specific aliases and functions
 . ~/.bash-colors
 PS1="\[$txtgrn\]\u\[$txtrst\]@\[$txtcyn\]\h\[$txtrst\] :: \[$bldylw\]\w\[$txtrst\]\n\$ "

@@ -14,7 +14,7 @@ else
 	PYTHONPATH="$HOME/.local/lib/python2.6/site-packages/:$PYTHONPATH"
 fi
 
-PYTHONSTARTUP="$HOME/.pythonrc"
+export PYTHONSTARTUP="$HOME/.pythonrc"
 
 # User specific aliases and functions
 . ~/.bash-colors
@@ -23,3 +23,7 @@ PS1="\[$txtgrn\]\u\[$txtrst\]@\[$txtcyn\]\h\[$txtrst\] :: \[$bldylw\]\w\[$txtrst
 if [ -f "$HOME/.bash_local" ] ; then
 	source "$HOME/.bash_local"
 fi
+
+alias py27=python27
+pysite=/usr/lib/python2.7/site-packages
+log=/var/log

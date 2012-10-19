@@ -22,3 +22,5 @@
 [core]
 	editor = vim
 	excludesfile = /home/bwm/.gitignore
+[svn]
+	rmdir = yes

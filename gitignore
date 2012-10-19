@@ -5,7 +5,18 @@
 .emacs.desktop*
 *~
 *.elc
+.dir-locals.el
+.pyflymakerc*
+*.egg-info
+*.org
+.emacsruntests
+\#*#
+# vim
+*.swp
 #python
 *.pyc
 *.pyo
 build/
+docs/_*
+dist/
+.coverage

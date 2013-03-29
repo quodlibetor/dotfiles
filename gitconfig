@@ -22,5 +22,9 @@
 [core]
 	editor = vim
 	excludesfile = /home/bwm/.gitignore
+	pager = less -FRXS
 [svn]
-	rmdir = yes
+	rmdir = true
+[push]
+    # requires git > 1.8.0
+	default = simple

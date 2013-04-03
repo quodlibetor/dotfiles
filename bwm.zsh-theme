@@ -1,7 +1,8 @@
 #!/bin/zsh
 
-PROMPT='%{$fg_bold[red]%}➜ %{$fg_bold[green]%}%p %{$fg[cyan]%}${PWD/#$HOME/~} %{$fg_bold[blue]%}$(git_prompt_info)%{$fg_bold[blue]%} % %{$reset_color%}
-'
+PROMPT='%{$fg_bold[red]%}➜  %{$fg[cyan]%}${PWD/#$HOME/~} %{$fg_bold[blue]%}$(git_prompt_info)
+%{$fg[green]%}$%{$reset_color%} '
+
 return_code='%(?..%{$fg[red]%} %? ↵ )'
 
 RPROMPT="${return_code}%{$reset_color%}"

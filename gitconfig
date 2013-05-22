@@ -28,3 +28,5 @@
 [push]
     # requires git > 1.8.0
 	default = simple
+[diff]
+	tool = meld

@@ -45,7 +45,7 @@ export PYTHONSTARTUP="$HOME/.pythonrc"
 export EDITOR=vim
 export VISUAL=$EDITOR
 export VIRTUALENV_USE_DISTRIBUTE=true
-export PIP_DOWNLOAD_CACHE=$HOME/.pip/cache
+export PIP_DOWNLOAD_CACHE=$HOME/.pip/url_cache
 
 export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")
 source $HOME/.aws-setup
@@ -109,3 +109,8 @@ pipi() {
 # make sure that ssh-agent doesn't always ask me for a password
 # seems to be idempotent?
 eval $( gnome-keyring-daemon --start 2>/dev/null )
+fpath=($HOME/.awssh $fpath)
+autoload -U compinit ; compinit
+source $HOME/.awssh/awssh.sh
+
+export NOSE_WITH_PROGRESSIVE=y

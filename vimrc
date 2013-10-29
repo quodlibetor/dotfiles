@@ -1,3 +1,5 @@
+execute pathogen#infect()
+
 set ignorecase
 set smartcase
 set incsearch
@@ -8,6 +10,8 @@ filetype plugin indent on
 set tabstop=4
 set shiftwidth=4
 set expandtab
+
+let mapleader=","
 
 " jump to the last position when reopening a file
 if has("autocmd")

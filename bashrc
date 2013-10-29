@@ -2,17 +2,17 @@
 # .bashrc
 # Source global definitions
 if [ -f /etc/bashrc ]; then
-	. /etc/bashrc
+    . /etc/bashrc
 fi
 
 if [ -d "$HOME/.local/bin" ] ; then
-	export PATH="$PATH:$HOME/.local/bin"
+    export PATH="$PATH:$HOME/.local/bin"
 fi
 
 if [ -z "$PYTHONPATH" ] ; then
-	PYTHONPATH="$HOME/.local/lib/python2.6/site-packages/"
+    PYTHONPATH="$HOME/.local/lib/python2.6/site-packages/"
 else
-	PYTHONPATH="$HOME/.local/lib/python2.6/site-packages/:$PYTHONPATH"
+    PYTHONPATH="$HOME/.local/lib/python2.6/site-packages/:$PYTHONPATH"
 fi
 
 export PYTHONSTARTUP="$HOME/.pythonrc"
@@ -22,21 +22,21 @@ export PYTHONSTARTUP="$HOME/.pythonrc"
 PS1="\[$txtgrn\]\u\[$txtrst\]@\[$txtcyn\]\h\[$txtrst\] :: \[$bldylw\]\w\[$txtrst\]\n\$ "
 
 if [ -f "$HOME/.bash_local" ] ; then
-	source "$HOME/.bash_local"
+    source "$HOME/.bash_local"
 fi
 
 if [ -f "$HOME/.bashfuncs" ] ; then
-	source "$HOME/.bashfuncs"
+    source "$HOME/.bashfuncs"
 fi
 
 sv() {
-	echo 'starting virtualenvwrapper'
-	source /usr/local/bin/virtualenvwrapper.sh
+    echo 'starting virtualenvwrapper'
+    source /usr/local/bin/virtualenvwrapper.sh
 }
 
 workon() {
-	sv
-	workon $@
+    sv
+    workon $@
 }
 
 ff() {

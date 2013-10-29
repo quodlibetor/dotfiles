@@ -17,3 +17,87 @@ let mapleader=","
 if has("autocmd")
   au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 endif
+
+autocmd BufNewFile,BufRead *.py compiler nose
+
+nnoremap <leader>ta :MakeGreen<CR>
+nnoremap <leader>tm :MakeGreen %<CR>
+nnoremap <leader>tc :MakeCurrentClassGreen %<CR>
+nnoremap <leader>t. :MakeCurrentFunctionGreen %<CR>
+
+""""""""""""""""""""""""""""""""""""""""""""""""""
+" these "find" functions are from pytest.vim
+" https://github.com/alfredodeza/pytest.vim/blob/master/ftplugin/python/pytest.vim
+" these MakeCurrent*Green functions are my jokes at vimscript
+
+" Always goes back to the first instance
+" and returns that if found
+function! s:FindPythonObject(obj)
+    let orig_line = line('.')
+    let orig_col = col('.')
+    let orig_indent = indent(orig_line)
+
+    if (a:obj == "class")
+        let objregexp = '\v^\s*(.*class)\s+(\w+)\s*'
+    else
+        let objregexp = '\v^\s*(.*def)\s+(\w+)'
+    endif
+
+    let flag = "Wb"
+
+    while search(objregexp, flag) > 0
+        "
+        " Very naive, but if the indent is less than or equal to four
+        " keep on going because we assume you are nesting.
+        "
+        if indent(line('.')) <= 4
+            return 1
+        endif
+    endwhile
+
+endfunction
+
+function! s:NameOfCurrentClass()
+    let save_cursor = getpos(".")
+    normal! $<cr>
+    let find_object = s:FindPythonObject('class')
+    if (find_object)
+        let line = getline('.')
+        call setpos('.', save_cursor)
+        let match_result = matchlist(line, ' *class \+\(\w\+\)')
+        return match_result[1]
+    endif
+endfunction
+
+function! MakeCurrentClassGreen(currentfile)
+    let currentclass = s:NameOfCurrentClass()
+    let full = bufname(a:currentfile) . ":" . currentclass
+    call MakeGreen(full)
+endfunction
+
+:command -nargs=1 MakeCurrentClassGreen :call MakeCurrentClassGreen(<f-args>)
+
+function! s:NameOfCurrentFunction()
+    let save_cursor = getpos(".")
+    normal! $<cr>
+    let find_object = s:FindPythonObject('function')
+    if (find_object)
+        let line = getline('.')
+        call setpos('.', save_cursor)
+        let match_result = matchlist(line, ' *def \+\(\w\+\)\((self\)\?')
+        let result =  match_result[1]
+        if (match_result[2] == '(self')
+            let class = s:NameOfCurrentClass()
+            let result = class . "." . result
+        endif
+        return result
+    endif
+endfunction
+
+function! MakeCurrentFunctionGreen(currentfile)
+    let currentfunction = s:NameOfCurrentFunction()
+    let full = bufname(a:currentfile) . ":" . currentfunction
+    call MakeGreen(full)
+endfunction
+
+:command -nargs=1 MakeCurrentFunctionGreen :call MakeCurrentFunctionGreen(<f-args>)

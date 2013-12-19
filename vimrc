@@ -27,6 +27,15 @@ nnoremap <leader>t. :MakeCurrentFunctionGreen %<CR>
 
 nnoremap ; :
 
+function! s:DiffWithSaved()
+  let filetype=&ft
+  diffthis
+  vnew | r # | normal! 1Gdd
+  diffthis
+  exe "setlocal bt=nofile bh=wipe nobl noswf ro ft=" . filetype
+endfunction
+com! DiffSaved call s:DiffWithSaved()
+
 """"""""""""""""""""""""""""""""""""""""""""""""""
 " these "find" functions are from pytest.vim
 " https://github.com/alfredodeza/pytest.vim/blob/master/ftplugin/python/pytest.vim

@@ -7,10 +7,12 @@
 	lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative --branches=* --remotes=*
 	lgs = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15
 	lgsa = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15 --branches=* --remotes=*
+	branchtree = log --branches=* --graph --decorate --oneline --simplify-by-decoration
 	ix = diff --cached
 	stash-unapply = !git stash show -p | git apply --reverse
 	root = !pwd
 	dcommit = svn dcommit
+	fmerge = merge --ff-only
 	update = !git push origin :refs/heads/dummy && git fetch
 	svnversion = !"git svn find-rev $( git rev-parse trunk )"
 
@@ -28,7 +30,11 @@
 [svn]
 	rmdir = true
 [push]
-    # requires git > 1.8.0
+	# requires git > 1.8.0
 	default = simple
+[fetch]
+	prune = true
 [diff]
 	tool = meld
+[grep]
+	patternType = perl

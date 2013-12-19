@@ -25,6 +25,8 @@ nnoremap <leader>tm :MakeGreen %<CR>
 nnoremap <leader>tc :MakeCurrentClassGreen %<CR>
 nnoremap <leader>t. :MakeCurrentFunctionGreen %<CR>
 
+nnoremap ; :
+
 """"""""""""""""""""""""""""""""""""""""""""""""""
 " these "find" functions are from pytest.vim
 " https://github.com/alfredodeza/pytest.vim/blob/master/ftplugin/python/pytest.vim

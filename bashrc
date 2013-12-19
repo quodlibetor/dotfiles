@@ -9,6 +9,9 @@ if [ -d "$HOME/.local/bin" ] ; then
     export PATH="$PATH:$HOME/.local/bin"
 fi
 
+shopt -s extglob
+shopt -s globstar 2>/dev/null  # globstar doesn't exist on old versions of bash
+
 if [ -z "$PYTHONPATH" ] ; then
     PYTHONPATH="$HOME/.local/lib/python2.6/site-packages/"
 else
@@ -45,6 +48,14 @@ ff() {
 }
 
 alias py27=python27
+
+alias ls="ls --color=auto"
+alias ll="ls -l"
+
 pysite=/usr/lib/python2.7/site-packages
 log=/var/log
-ilog=/var/log/ragu/ingestor
+
+project=CHANGE_ME
+plog=/var/log/ragu/${project}
+pbase=/var/www/${project}
+psite=${ibase}/lib/python2.7/site-packages

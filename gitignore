@@ -11,6 +11,7 @@
 *.org
 .emacsruntests
 \#*#
+/runtests
 # vim
 *.swp
 #python

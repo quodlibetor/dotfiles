@@ -38,3 +38,5 @@
 	tool = meld
 [grep]
 	patternType = perl
+[rebase]
+	autosquash = true

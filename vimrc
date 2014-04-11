@@ -1,4 +1,9 @@
-execute pathogen#infect()
+if filereadable(expand("~/.vim/autoload/pathogen.vim"))
+    runtime! autoload/pathogen.vim
+    if exists("g:loaded_pathogen")
+       execute pathogen#infect()
+    endif
+endif
 
 set ignorecase
 set smartcase
@@ -13,6 +18,10 @@ set shiftwidth=4
 set expandtab
 
 let mapleader=","
+set background=dark
+if filereadable(expand("~/.vim/colors/distinguished.vim"))
+    colorscheme distinguished
+endif
 
 " jump to the last position when reopening a file
 if has("autocmd")

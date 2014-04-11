@@ -8,6 +8,9 @@ fi
 if [ -d "$HOME/.local/bin" ] ; then
     export PATH="$PATH:$HOME/.local/bin"
 fi
+if [[ ! "$PATH" =~ sbin ]] ; then
+    PATH="$PATH:/sbin:/usr/sbin"
+fi
 
 shopt -s extglob
 shopt -s globstar 2>/dev/null  # globstar doesn't exist on old versions of bash
@@ -21,7 +24,14 @@ fi
 export PYTHONSTARTUP="$HOME/.pythonrc"
 
 # User specific aliases and functions
-. ~/.bash-colors
+if [ -f ~/.bash-colors ] ; then
+    . ~/.bash-colors
+else
+    . ./bash-colors
+fi
+
+eval "$( dircolors )"
+
 PS1="\[$txtgrn\]\u\[$txtrst\]@\[$txtcyn\]\h\[$txtrst\] :: \[$bldylw\]\w\[$txtrst\]\n\$ "
 
 if [ -f "$HOME/.bash_local" ] ; then
@@ -43,14 +53,16 @@ workon() {
 }
 
 ff() {
-    echo 'ps -ef | grep --color=always -E '$2' "(PID|'$1')" | grep -v grep'
+#    echo 'ps -ef | grep --color=always -E '$2' "(PID|'$1')" | grep -v grep'
     ps -ef | grep --color=always -E $2 "(PID|$1)" | grep -v grep
 }
 
-alias py27=python27
+alias py27=python2.7
+alias grep="grep --color=auto"
 
 alias ls="ls --color=auto"
-alias ll="ls -l"
+alias ll="ls -lh"
+alias la="ls -lah"
 
 pysite=/usr/lib/python2.7/site-packages
 log=/var/log
@@ -58,4 +70,6 @@ log=/var/log
 project=CHANGE_ME
 plog=/var/log/ragu/${project}
 pbase=/var/www/${project}
-psite=${ibase}/lib/python2.7/site-packages
+psite=${pbase}/lib/python2.7/site-packages
+
+PATH="$PATH:${pbase}/bin"

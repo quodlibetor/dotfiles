@@ -1,0 +1,22 @@
+IMAPAccount advance
+Host localhost
+Port 1143
+User ailocal\\bmaister
+PassCmd "gpg -d ~/.auth.gpg"
+UseIMAPS no
+RequireSSL no
+
+IMAPStore advance-remote
+Account advance
+
+MaildirStore advance-local
+Path ~/mail/
+Inbox ~/mail/INBOX
+
+Channel advance
+Master :advance-remote:
+Slave :advance-local:
+Create Both
+Patterns * "!Archives.2012"
+SyncState *
+Sync All

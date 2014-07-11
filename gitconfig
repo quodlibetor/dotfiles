@@ -15,7 +15,22 @@
 	fmerge = merge --ff-only
 	update = !git push origin :refs/heads/dummy && git fetch
 	svnversion = !"git svn find-rev $( git rev-parse trunk )"
-
+	find = !git rev-list --all --abbrev-commit | xargs git grep -F
+	commit-files = diff-tree --no-commit-id --name-only -r
+	fixws = !"\
+		  if (! git diff-files --quiet .) && \
+		     (! git diff-index --quiet --cached HEAD) ; then \
+		    git commit -m FIXWS_SAVE_INDEX && \
+		    git stash save FIXWS_SAVE_TREE && \
+		    git rebase --whitespace=fix HEAD~ && \
+		    git reset --soft HEAD~ && \
+		    git stash pop ; \
+		  elif (! git diff-index --quiet --cached HEAD) ; then \
+		    git commit -m FIXWS_SAVE_INDEX && \
+		    git rebase --whitespace=fix HEAD~ && \
+		    git reset --soft HEAD~ ; \
+		  fi"
+	who = shortlog -s --
 [color]
 	ui = true
 [help]

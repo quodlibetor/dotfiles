@@ -85,6 +85,17 @@ ff() {
    ps -ef | grep --color=always -E $2 "(PID|$1)" | grep -v grep
 }
 
+fssh() {
+    if [[ -n "$VIRTUAL_ENV" ]] ; then
+        old_venv=$( basename $VIRTUAL_ENV )
+        deactivate
+    fi
+
+    ssh $1 "echo -n"  # firstssh doesn't handle initial logins great
+    firstssh $1
+
+    [[ -n "$old_venv" ]] && workon $old_venv
+}
 exps1() {
     if [ x$inexps1 = x ] ; then
         exps1_oldps1="$PS1"
@@ -119,6 +130,9 @@ pipi() {
     set +x
 }
 
+fullhost() {
+    grep -A1 "Host ${1}$" ~/.ssh/config | awk '/HostName/ {print $2}'
+}
 # make sure that ssh-agent doesn't always ask me for a password
 # seems to be idempotent?
 eval $( gnome-keyring-daemon --start 2>/dev/null )

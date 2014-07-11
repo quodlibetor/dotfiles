@@ -71,5 +71,6 @@ project=CHANGE_ME
 plog=/var/log/ragu/${project}
 pbase=/var/www/${project}
 psite=${pbase}/lib/python2.7/site-packages
+config=/etc/adi/services/${project}
 
 PATH="$PATH:${pbase}/bin"

@@ -28,7 +28,9 @@ if has("autocmd")
   au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 endif
 
-autocmd BufNewFile,BufRead *.py compiler nose
+if filereadable(expand("~/.vim/bundle/nose.vim"))
+    autocmd BufNewFile,BufRead *.py compiler nose
+endif
 
 nnoremap <leader>ta :MakeGreen<CR>
 nnoremap <leader>tm :MakeGreen %<CR>

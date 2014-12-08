@@ -39,6 +39,10 @@
 	who = shortlog -s --
 [color]
 	ui = true
+[color "status"]
+    added = green
+    changed = yellow
+    untracked = red
 [help]
 	autocorrect = 1
 [user]

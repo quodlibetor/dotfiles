@@ -45,9 +45,6 @@
     untracked = red
 [help]
 	autocorrect = 1
-[user]
-	name = Brandon W Maister
-	email = bmaister@advance.net
 [core]
 	editor = vim
 	excludesfile = ~/.gitignore

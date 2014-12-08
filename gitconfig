@@ -1,5 +1,9 @@
+[user]
+	name = Brandon W Maister
+	email = bwm@knewton.com
 [alias]
 	st = status
+	sb = status --short --branch
 	s = status --short
 	ci = commit
 	co = checkout
@@ -7,9 +11,11 @@
 	lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative --branches=* --remotes=*
 	lgs = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15
 	lgsa = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15 --branches=* --remotes=*
-	branchtree = log --branches=* --graph --decorate --oneline --simplify-by-decoration
+	bt = !"git lga --simplify-by-decoration | grep -v 'tag[^,]*)' | grep -Ev $( git branch --all --merged  | sed -E -e 's/ //g' -e '/^\\*/d' | tr '\n' '|' | sed -E 's/(\\|$|^\\|)//g' )"
+	branchtree = !"git lga --simplify-by-decoration"
+	branchfiles = !"git diff --name-only @ $(git merge-base @ master)"
+	mergedfiles = !"git diff --name-only HEAD^2 $(git merge-base HEAD^2 HEAD^ )"
 	ix = diff --cached
-	stash-unapply = !git stash show -p | git apply --reverse
 	root = !pwd
 	dcommit = svn dcommit
 	fmerge = merge --ff-only
@@ -40,7 +46,7 @@
 	email = bmaister@advance.net
 [core]
 	editor = vim
-	excludesfile = /home/bwm/.gitignore
+	excludesfile = ~/.gitignore
 	pager = less -FRXS
 [svn]
 	rmdir = true

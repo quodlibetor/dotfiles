@@ -54,6 +54,11 @@ export VIRTUALENV_USE_DISTRIBUTE=true
 export PIP_DOWNLOAD_CACHE=$HOME/.pip/url_cache
 
 export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")
+if [[ $(uname) == Darwin ]] ; then
+    export CLICOLOR=1
+    export LSCOLORS=GxFxCxDxBxegedabagaced
+fi
+
 
 svnbase="https://svn.advance.net"
 svngae="$svnbase/advance-gae"
@@ -73,7 +78,17 @@ alias -r ll="ls -lh"
 alias -r ipy=ipython
 alias -r xsel="xsel --clipboard"
 alias -r pyup="python setup.py register -r advance sdist upload -r advance"
-alias -r ect="emacsclient -t"
+alias -r emacsf="open -a /usr/local/Cellar/emacs/HEAD/Emacs.app/Contents/MacOS/Emacs"
+alias -r em="emacsclient"
+alias -r emn="emacsclient --no-wait"
+alias -r emt="emacsclient -t"
+alias -r emc="emacsclient --create-frame --no-wait"
+alias -r new_ssh='ssh -i ~/.ssh/temporary_knewton_launch_key.pem -o GSSAPIKeyExchange=no'
+alias -r mfind="mdfind -onlyin . -name"
+alias -r bup="be berks upload --no-freeze"
+alias -r bdev="be berks install && be berks upload --no-freeze"
+alias -r knife=/opt/chefdk/bin/knife
+alias -g listening="lsof -i -n -P | egrep 'COMMAND|LISTEN'"
 
 sv() {
         echo 'starting virtualenvwrapper'

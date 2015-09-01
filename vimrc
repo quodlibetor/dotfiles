@@ -9,7 +9,9 @@ set ignorecase
 set smartcase
 set incsearch
 set showcmd		" Show (partial) command in status line.
-set showmatch		" Show matching brackets.
+set showmatch	" Show matching brackets.
+set wildmenu
+set wildmode=longest:full,full
 
 filetype plugin indent on
 syntax on

@@ -37,6 +37,9 @@
 		    git reset --soft HEAD~ ; \
 		  fi"
 	who = shortlog -s --
+    delmerged = !"git branch --merged | grep -v '\\*' | egrep -v 'develop|production|staging|uat' | xargs -n 1 git branch -d"
+	pushme = push -u origin HEAD
+
 [color]
 	ui = true
 [color "status"]

@@ -42,7 +42,9 @@ source $ZSH/oh-my-zsh.sh
 
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
-eval `dircolors`
+# enable M-x edit-command-line to open current command in vim
+autoload edit-command-line
+zle -N edit-command-line
 
 # Customize to your needs...
 export PYTHONSTARTUP="$HOME/.pythonrc"

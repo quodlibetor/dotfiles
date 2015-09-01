@@ -101,7 +101,7 @@ workon() {
 }
 
 ff() {
-   ps -ef | grep --color=always -E $2 "(PID|$1)" | grep -v grep
+   ps -eo "user pid ppid %cpu %mem time args" | grep -Ev 'ps -eo|grep' | grep -i -E $2 "( PID |$1)"
 }
 
 fssh() {

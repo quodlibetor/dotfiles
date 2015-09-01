@@ -22,6 +22,8 @@ def main(link_target_dir, dest, yes):
         return
 
     for fname in os.listdir(link_target_dir):
+        if fname.startswith('_'):
+            continue
 
         linkfile = os.path.join(dest, '.' + fname)
         source_file = os.path.join(link_target_dir, fname)
@@ -36,7 +38,7 @@ def main(link_target_dir, dest, yes):
                                    (linkfile, source_file))
                 if not agrees.strip() == 'y':
                     continue
-            os.unlink(linkfile)
+            os.rename(linkfile, linkfile + '.bak')
 
         print 'symlinking %s to %s' % (linkfile, source_file)
         os.symlink(source_file, linkfile)

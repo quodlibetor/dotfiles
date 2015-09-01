@@ -65,3 +65,6 @@
 	patternType = perl
 [rebase]
 	autosquash = true
+
+[pull]
+	ff = only

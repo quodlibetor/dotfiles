@@ -34,6 +34,9 @@ if filereadable(expand("~/.vim/bundle/nose.vim"))
     autocmd BufNewFile,BufRead *.py compiler nose
 endif
 
+" Map Y to act like D and C, i.e. to yank until EOL, rather than act as yy,
+" " which is the default
+map Y y$
 nnoremap <leader>ta :MakeGreen<CR>
 nnoremap <leader>tm :MakeGreen %<CR>
 nnoremap <leader>tc :MakeCurrentClassGreen %<CR>

@@ -24,3 +24,6 @@ docs/_*
 dist/
 .coverage
 /.tox
+*.org
+.tern-port
+.DS_Store

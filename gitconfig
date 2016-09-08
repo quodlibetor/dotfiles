@@ -7,7 +7,7 @@
 	s = status --short
 	ci = commit
 	co = checkout
-	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=iso
 	lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative --branches=* --remotes=*
 	lgs = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15
 	lgsa = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15 --branches=* --remotes=*
@@ -37,21 +37,15 @@
 		    git reset --soft HEAD~ ; \
 		  fi"
 	who = shortlog -s --
-    delmerged = !"git branch --merged | grep -v '\\*' | egrep -v 'develop|production|staging|uat' | xargs -n 1 git branch -d"
+    delmerged = !"git branch --merged | grep -v '\\*' | egrep -v 'master|develop|production|staging|uat' | xargs -n 1 git branch -d"
 	pushme = push -u origin HEAD
 
-[color]
-	ui = true
-[color "status"]
-    added = green
-    changed = yellow
-    untracked = red
 [help]
 	autocorrect = 1
 [core]
 	editor = vim
 	excludesfile = ~/.gitignore
-	pager = less -FRXS
+    pager = diff-highlight | diff-so-fancy | less --tabs=1,5 -XRF
 [svn]
 	rmdir = true
 [push]
@@ -61,10 +55,34 @@
 	prune = true
 [diff]
 	tool = meld
-[grep]
-	patternType = perl
+	algorithm = patience
+	compactionHeuristic = true
+#[grep]
+#	patternType = perl
 [rebase]
 	autosquash = true
+	autoStash = true
 
 [pull]
 	ff = only
+[color]
+    ui = true
+[color "diff"]
+    meta = yellow bold
+    commit = green bold
+    frag = magenta bold
+    old = red bold
+    new = green bold
+    whitespace = red reverse
+[color "diff-highlight"]
+    oldNormal = red bold
+    oldHighlight = "red bold 52"
+    newNormal = "green bold"
+    newHighlight = "green bold 22"
+[color "status"]
+    added = green
+    changed = yellow
+    untracked = red
+
+[url "bwm@git.knewton.net:29418"]
+    insteadOf = https://git.knewton.net/

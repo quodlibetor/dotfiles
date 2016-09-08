@@ -21,9 +21,10 @@ set expandtab
 
 let mapleader=","
 set background=dark
-if filereadable(expand("~/.vim/colors/distinguished.vim"))
-    colorscheme distinguished
-endif
+"if filereadable(expand("~/.vim/colors/distinguished.vim"))
+"    colorscheme distinguished
+"endif
+colorscheme solarized
 
 " jump to the last position when reopening a file
 if has("autocmd")
@@ -37,6 +38,8 @@ endif
 " Map Y to act like D and C, i.e. to yank until EOL, rather than act as yy,
 " " which is the default
 map Y y$
+nnoremap <C-L> :nohl<CR><C-L>   " ctrl-l clears highlight
+
 nnoremap <leader>ta :MakeGreen<CR>
 nnoremap <leader>tm :MakeGreen %<CR>
 nnoremap <leader>tc :MakeCurrentClassGreen %<CR>

@@ -15,7 +15,11 @@ else:
 
 with open(history, 'a') as histfile: pass # touch it
 
-readline.read_history_file(history)
+try:
+    readline.read_history_file(history)
+except:
+    print("WARNING, TRUNCATING HISTORY")
+    open(history, 'w') # truncate it
 readline.parse_and_bind('tab: complete')
 atexit.register(readline.write_history_file, history)
 

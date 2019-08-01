@@ -6,7 +6,7 @@ if [ -f /etc/bashrc ]; then
 fi
 
 if [ -d "$HOME/.local/bin" ] ; then
-    export PATH="$PATH:$HOME/.local/bin"
+    export PATH="$PATH:$HOME/.local/bin:$HOME/.cargo/bin"
 fi
 if [[ ! "$PATH" =~ sbin ]] ; then
     PATH="$PATH:/sbin:/usr/sbin"
@@ -26,7 +26,7 @@ export PYTHONSTARTUP="$HOME/.pythonrc"
 # User specific aliases and functions
 if [ -f ~/.bash-colors ] ; then
     . ~/.bash-colors
-else
+elif [ -f ./bash-colors ] ; then
     . ./bash-colors
 fi
 
@@ -60,9 +60,9 @@ ff() {
 alias py27=python2.7
 alias grep="grep --color=auto"
 
-alias ls="ls --color=auto"
-alias ll="ls -lh"
-alias la="ls -lah"
+alias ls="exa"
+alias ll="exa -lh"
+alias la="exa -lah"
 
 pysite=/usr/lib/python2.7/site-packages
 log=/var/log
@@ -74,3 +74,5 @@ psite=${pbase}/lib/python2.7/site-packages
 config=/etc/adi/services/${project}
 
 PATH="$PATH:${pbase}/bin"
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash

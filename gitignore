@@ -16,10 +16,14 @@
 *.swp
 #python
 .pyflymakerc
+.mypy_cache
+/.cache
+/.pytest_cache
 *.egg-info
 *.pyc
+__pycache__
 *.pyo
-build/
+/build/
 docs/_*
 dist/
 .coverage
@@ -27,3 +31,10 @@ dist/
 *.org
 .tern-port
 .DS_Store
+.python-version
+*flycheck*
+.tern-project
+.nvmrc
+# IDEs
+/.vscode
+/.idea

@@ -1,84 +1,89 @@
 [user]
-	name = Brandon W Maister
-	email = bwm@knewton.com
+    name = Brandon W Maister
+
 [alias]
-	st = status
-	sb = status --short --branch
-	s = status --short
-	ci = commit
-	co = checkout
-	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=iso
-	lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative --branches=* --remotes=*
-	lgs = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15
-	lgsa = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15 --branches=* --remotes=*
-	bt = !"git lga --simplify-by-decoration | grep -v 'tag[^,]*)' | grep -Ev $( git branch --all --merged  | sed -E -e 's/ //g' -e '/^\\*/d' | tr '\n' '|' | sed -E 's/(\\|$|^\\|)//g' )"
-	branchtree = !"git lga --simplify-by-decoration"
-	branchfiles = !"git diff --name-only @ $(git merge-base @ master)"
-	mergedfiles = !"git diff --name-only HEAD^2 $(git merge-base HEAD^2 HEAD^ )"
-	ix = diff --cached
-	root = !pwd
-	dcommit = svn dcommit
-	fmerge = merge --ff-only
-	update = !git push origin :refs/heads/dummy && git fetch
-	svnversion = !"git svn find-rev $( git rev-parse trunk )"
-	find = !git rev-list --all --abbrev-commit | xargs git grep -F
-	commit-files = diff-tree --no-commit-id --name-only -r
-	fixws = !"\
-		  if (! git diff-files --quiet .) && \
-		     (! git diff-index --quiet --cached HEAD) ; then \
-		    git commit -m FIXWS_SAVE_INDEX && \
-		    git stash save FIXWS_SAVE_TREE && \
-		    git rebase --whitespace=fix HEAD~ && \
-		    git reset --soft HEAD~ && \
-		    git stash pop ; \
-		  elif (! git diff-index --quiet --cached HEAD) ; then \
-		    git commit -m FIXWS_SAVE_INDEX && \
-		    git rebase --whitespace=fix HEAD~ && \
-		    git reset --soft HEAD~ ; \
-		  fi"
-	who = shortlog -s --
+    st = status
+    sb = status --short --branch
+    s = status --short
+    ci = commit
+    co = checkout
+    hist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
+    lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=iso
+    lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative --branches=* --remotes=*
+    lgs = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15
+    lgsa = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15 --branches=* --remotes=*
+    bt = !"git lga --simplify-by-decoration | grep -v 'tag[^,]*)' | grep -Ev $( git branch --all --merged  | sed -E -e 's/ //g' -e '/^\\*/d' | tr '\n' '|' | sed -E 's/(\\|$|^\\|)//g' )"
+    rpull = pull -r
+    branchtree = !"git lga --simplify-by-decoration"
+    branchfiles = !"git diff --name-only @ $(git merge-base @ master)"
+    mergedfiles = !"git diff --name-only HEAD^2 $(git merge-base HEAD^2 HEAD^ )"
+    ix = diff --cached
+    root = !pwd
+    dcommit = svn dcommit
+    fmerge = merge --ff-only
+    update = !git push origin :refs/heads/dummy && git fetch
+    svnversion = !"git svn find-rev $( git rev-parse trunk )"
+    find = !git rev-list --all --abbrev-commit | xargs git grep -F
+    commit-files = diff-tree --no-commit-id --name-only -r
+    fixws = !"\
+          if (! git diff-files --quiet .) && \
+             (! git diff-index --quiet --cached HEAD) ; then \
+            git commit -m FIXWS_SAVE_INDEX && \
+            git stash save FIXWS_SAVE_TREE && \
+            git rebase --whitespace=fix HEAD~ && \
+            git reset --soft HEAD~ && \
+            git stash pop ; \
+          elif (! git diff-index --quiet --cached HEAD) ; then \
+            git commit -m FIXWS_SAVE_INDEX && \
+            git rebase --whitespace=fix HEAD~ && \
+            git reset --soft HEAD~ ; \
+          fi"
+    who = shortlog -s --
     delmerged = !"git branch --merged | grep -v '\\*' | egrep -v 'master|develop|production|staging|uat' | xargs -n 1 git branch -d"
-	pushme = push -u origin HEAD
+    pushme = push -u origin HEAD
 
 [help]
-	autocorrect = 1
+    autocorrect = 1
 [core]
-	editor = vim
-	excludesfile = ~/.gitignore
-    pager = diff-highlight | diff-so-fancy | less --tabs=1,5 -XRF
+    editor = vim
+    excludesfile = ~/.gitignore
+    #pager = diff-highlight | diff-so-fancy | less --tabs=1,5 -XRF
+    pager = diff-highlight | less --tabs=1,5 -XRF
 [svn]
-	rmdir = true
+    rmdir = true
 [push]
-	# requires git > 1.8.0
-	default = simple
+    # requires git > 1.8.0
+    default = simple
 [fetch]
-	prune = true
+    prune = true
 [diff]
-	tool = meld
-	algorithm = patience
-	compactionHeuristic = true
+    tool = meld
+    #algorithm = patience
+    ; compactionHeuristic = true
+    colorMoved = zebra
+    indentHeuristic = true
 #[grep]
-#	patternType = perl
+#    patternType = perl
 [rebase]
-	autosquash = true
-	autoStash = true
+    autosquash = true
+    autoStash = true
 
 [pull]
-	ff = only
+    rebase = true
 [color]
     ui = true
-[color "diff"]
-    meta = yellow bold
-    commit = green bold
-    frag = magenta bold
-    old = red bold
-    new = green bold
-    whitespace = red reverse
-[color "diff-highlight"]
-    oldNormal = red bold
-    oldHighlight = "red bold 52"
-    newNormal = "green bold"
-    newHighlight = "green bold 22"
+; [color "diff"]
+;     meta = yellow bold
+;     commit = green bold
+;     frag = magenta bold
+;     old = red bold
+;     new = green bold
+;     whitespace = red reverse
+; [color "diff-highlight"]
+;     oldNormal = red bold
+;     oldHighlight = "red bold 52"
+;     newNormal = "green bold"
+;     newHighlight = "green bold 22"
 [color "status"]
     added = green
     changed = yellow
@@ -86,3 +91,7 @@
 
 [url "bwm@git.knewton.net:29418"]
     insteadOf = https://git.knewton.net/
+[merge]
+    conflictstyle = diff3
+[github]
+    user = quodlibetor

@@ -1,9 +1,11 @@
 # -*- mode: shell-script -*-
+#set -x
 if [ -n "$PATH" ] ; then
-    export PATH="$HOME/.local/bin:$HOME/Library/Python/2.7/bin:/usr/lib/lightdm/lightdm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:$PATH:$HOME/Library/Haskell/bin:/usr/local/opt/go/libexec/bin:/Users/bwm/.multirust/toolchains/nightly/cargo/bin:/Users/bwm/.multirust/toolchains/stable/cargo/bin:$HOME/.cargo/bin:$HOME/.pyenv/versions/3.4.5/bin:/Users/bwm/anaconda3/bin"
+    export PATH="$HOME/.local/bin:$HOME/Library/Python/2.7/bin:/usr/lib/lightdm/lightdm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:$PATH:$HOME/Library/Haskell/bin:/usr/local/opt/go/libexec/bin:$HOME/.cargo/bin:/Users/bwm/anaconda3/bin:$HOME/go/bin"
 else
-    export PATH="$HOME/.local/bin:/usr/lib/lightdm/lightdm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/opt/go/libexec/bin:/Users/bwm/.multirust/toolchains/nightly/cargo/bin:/Users/bwm/.cargo/bin:/Users/bwm/.multirust/toolchains/nightly/cargo/bin:$HOME/.cargo/bin:$HOME/.pyenv/versions/3.4.5/bin:/Users/bwm/anaconda3/bin"
+    export PATH="$HOME/.local/bin:/usr/lib/lightdm/lightdm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/opt/go/libexec/bin:/Users/bwm/.cargo/bin:$HOME/.cargo/bin:$HOME/go/bin"
 fi
+export PATH="$PATH:/usr/local/Cellar/node/7.9.0/bin"
 
 [ -n "$JUST_WANT_PATH" ] && return
 
@@ -17,7 +19,7 @@ setopt share_history
 # Look in ~/.oh-my-zsh/themes/
 # Optionally, if you set this to "random", it'll load a random theme each
 # time that oh-my-zsh is loaded.
-ZSH_THEME="bwm"
+ZSH_THEME="spaceship"
 
 # Uncomment following line if you want to disable autosetting terminal title.
 DISABLE_AUTO_TITLE="true"
@@ -25,16 +27,16 @@ DISABLE_AUTO_TITLE="true"
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
-plugins=(git pytest autojump pip bundle django vagrant knife homebrew aws ansible docker zsh-syntax-highlighting)
+plugins=(git pytest autojump pip bundle django vagrant knife homebrew ansible docker zsh-syntax-highlighting)
+# aws -- this runs brew at startup
+
+fpath=($HOME/configs/fpath $fpath)
 
 source $ZSH/oh-my-zsh.sh
-FPATH="$HOME/.fpath:$FPATH"
 
-autoload -U deer
-zle -N deer
-bindkey '\ek' deer
-
-[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+#autoload -U deer
+#zle -N deer
+#bindkey '\ek' deer
 
 # enable M-x edit-command-line to open current command in vim
 autoload edit-command-line
@@ -43,10 +45,13 @@ zle -N edit-command-line
 # Customize to your needs...
 export PYTHONSTARTUP="$HOME/.pythonrc"
 export VIRTUALENV_PYTHON=/usr/local/bin/python
+export WORKON_HOME=$HOME/.virtualenvs
+export PYENV_ROOT=$HOME/.pyenvs
 export EDITOR=vim
 export VISUAL=$EDITOR
 export VIRTUALENV_USE_DISTRIBUTE=true
 export PIP_DOWNLOAD_CACHE=$HOME/.pip/url_cache
+export CARGO_INCREMENTAL=1
 
 if [[ $(uname) == Darwin ]] ; then
     export CLICOLOR=1
@@ -78,12 +83,16 @@ each () {
 alias -r la="ls -a"
 alias -r ll="ls -lh"
 alias -r ipy=ipython
-alias -r pytest="py.test"  # omg
 alias -r xsel="xsel --clipboard"
 alias -r pyup="python setup.py register -r advance sdist upload -r advance"
 alias -r emacsf="open -a /usr/local/Cellar/emacs/HEAD/Emacs.app/Contents/MacOS/Emacs"
 alias -r em="emacsclient"
 alias -r emn="emacsclient --no-wait"
+emf() {
+    file=$(awk '{sub(/:[0-9]*$/,"")}1' <<< "$1")
+    line=$(awk '{sub(/^.*:/,"")}1' <<< "$1")
+    emacsclient --no-wait "+$line" "$file"
+}
 alias -r emt="emacsclient -t"
 alias -r emc="emacsclient --create-frame --no-wait"
 alias -r new_ssh='ssh -i ~/.ssh/temporary_knewton_launch_key.pem -o GSSAPIKeyExchange=no'
@@ -107,8 +116,8 @@ sv() {
         source /usr/local/bin/virtualenvwrapper.sh
 }
 
-psgrep() {
-   ps -eo "user pid ppid %cpu %mem time args" | grep -Ev 'ps -eo|grep' | grep -i -E $2 "( PID |$1)"
+psgrep () {
+    ps -eo "user pid ppid %cpu %mem time args" | rg -v 'ps -eo|rg' | rg "( pid |$1)"
 }
 
 fssh() {
@@ -122,37 +131,11 @@ fssh() {
 
     [[ -n "$old_venv" ]] && workon $old_venv
 }
-ussh() {
-    host=$1
-    shift
-    ssh $host -i ~/.ssh/temporary_knewton_launch_key.pem
-    if [[ $? -ge 1 ]] ; then
-        echo "trying again as ubuntu with temp key"
-        ssh ubuntu@$host $@ -i ~/.ssh/temporary_knewton_launch_key.pem
-    fi
-    if [[ $? -ge 1 ]] ; then
-        echo "trying again as ubuntu with Ananlytics 001 key"
-        ssh ubuntu@$host $@ -i ~/.ssh/analytics-001.pem
-    fi
-    if [[ $? -ge 1 ]] ; then
-        echo "trying again as ubuntu with Staging 001 key"
-        ssh ubuntu@$host $@ -i ~/.ssh/staging-001.pem
-    fi
-    if [[ $? -ge 1 ]] ; then
-        echo "trying again as ubuntu with Production  001 key"
-        ssh ubuntu@$host $@ -i ~/.ssh/production-001.pem
-    fi
-    if [[ $? -ge 1 ]] ; then
-        echo "trying as default user without gssapi key exchange"
-        ssh $host $@ -i ~/.ssh/temporary_knewton_launch_key.pem -o GSSAPIKeyExchange=no
-    fi
-    if [[ $? -ge 1 ]] ; then
-        echo "trying as ubuntu without gssapi key exchange"
-        ssh ubuntu@$host $@ -i ~/.ssh/temporary_knewton_launch_key.pem -o GSSAPIKeyExchange=no
-    fi
-}
+
 assh() {
-    ssh -i ~/.ssh/ansible_deployed.pem ubuntu@$1
+    local host=$1
+    shift
+    ssh -i ~/.ssh/ansible_deployed.pem ubuntu@${host} $@
 }
 
 # ssh into a running instance by id
@@ -288,24 +271,30 @@ export PATH="$PATH:$HOME/go/bin"
 eval `opam config env`
 export JAVA_HOME=$(/usr/libexec/java_home)
 
-LESSPIPE=`which src-hilite-lesspipe.sh`
+#[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+[ -x /usr/local/Cellar/lesspipe/1.82/bin/lesspipe.sh ] && eval $( /usr/local/Cellar/lesspipe/1.82/bin/lesspipe.sh )
 
-export LESSOPEN="| ${LESSPIPE} %s"
-export LESS='-R'
+#LESSPIPE=`which src-hilite-lesspipe.sh`
+#
+#export LESSOPEN="| ${LESSPIPE} %s"
+#export LESS='-R'
 
 alias -g dnop='peter dmitriy dsiegel'
 alias -r rnop='kerrit r s peterk dmitriy dsiegel'
 alias -r rlearn='kerrit r s ludovic davidh martin'
 alias -g jl='| jq -C . | less -R'
+
+# Fuzzy finders
 export FZF_DEFAULT_OPTS='--extended-exact'
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+export SKIM_DEFAULT_COMMAND='git ls-tree -r --name-only HEAD || rg --files'
 
 # Load keys for kcs but then unset the generic ones for ansible
 [ -f ~/.creds/aws ] && . ~/.creds/aws
 unset AWS_ACCESS_KEY_ID ; unset AWS_SECRET_ACCESS_KEY
 
 # ansible/consul things
-vpf=~/.creds/data-bag-secret
+vpf=~/.creds/vault-password
 peu=service.production-euwest1.consul
 pus=service.production-useast1.consul
 sus=service.staging-useast1.consul
@@ -328,11 +317,19 @@ cqa=classicqa-useast1-consumerqa
 dev=classicdev-useast1
 con=consumer-useast1
 # eval $( docker-machine env dev )
-export DOCKER_TLS_VERIFY="1"
-export DOCKER_HOST="tcp://192.168.99.100:2376"
-export DOCKER_CERT_PATH="/Users/bwm/.docker/machine/machines/dev"
-export DOCKER_MACHINE_NAME="dev"
-
+docker-env() {
+    export DOCKER_TLS_VERIFY="1"
+    export DOCKER_HOST="tcp://192.168.99.100:2376"
+    export DOCKER_CERT_PATH="/Users/bwm/.docker/machine/machines/dev"
+    export DOCKER_MACHINE_NAME="dev"
+}
+docker-no-env() {
+    unset DOCKER_TLS_VERIFY
+    unset DOCKER_HOST
+    unset DOCKER_CERT_PATH
+    unset DOCKER_MACHINE_NAME
+}
+docker-env
 alias -r kssha="kssh -a -t tmux"
 alias -r nopbpu="nop p b && nop p p && nop p u"
 
@@ -343,7 +340,19 @@ alias -r nopbpu="nop p b && nop p p && nop p u"
 
 rename-tab() {
     TAB_NAME="$1"
-    tmux rename-window -t${TMUX_PANE} "$1"
+    if [[ "$TERM" =~ screen ]] ; then
+        echo "TERM=$TERM"
+        tmux rename-window -t${TMUX_PANE} "$1"
+    fi
+}
+
+npbu() {
+    env=$1
+    app=$2
+    nop p b $app && nop p p $app && nop p u $env $app
+}
+diff() {
+    colordiff -u $@ | diff-highlight
 }
 
 unalias run-help
@@ -354,6 +363,12 @@ krs() {
     git pull -r origin master && kerrit r s $@
 }
 
-export NVM_DIR="/Users/bwm/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+#export NVM_DIR="/Users/bwm/.nvm"
+#[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 export RUST_NEW_ERROR_FORMAT=true
+alias pipi='pip install -i https://pypi.org/simple'
+alias -r rg="rg --smart-case"
+eval "$(pyenv init -)"
+export PATH="/usr/local/opt/thrift@0.90/bin:$PATH"
+export PATH="/usr/local/opt/node@8/bin:$PATH"
+export LESSOPEN='| /usr/local/bin/lesspipe.sh %s'

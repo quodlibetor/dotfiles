@@ -7,57 +7,42 @@
     s = status --short
     ci = commit
     co = checkout
-    hist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
+    # show the diff that is about to be committed
+    ix = diff --cached
+    # better `git log` views
     lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=iso
     lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative --branches=* --remotes=*
     lgs = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15
     lgsa = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15 --branches=* --remotes=*
     bt = !"git lga --simplify-by-decoration | grep -v 'tag[^,]*)' | grep -Ev $( git branch --all --merged  | sed -E -e 's/ //g' -e '/^\\*/d' | tr '\n' '|' | sed -E 's/(\\|$|^\\|)//g' )"
-    rpull = pull -r
+    # commands tools to figure out how your branch has diverged from upstream
     branchtree = !"git lga --simplify-by-decoration"
     branchfiles = !"git diff --name-only @ $(git merge-base @ master)"
     mergedfiles = !"git diff --name-only HEAD^2 $(git merge-base HEAD^2 HEAD^ )"
-    ix = diff --cached
     root = !pwd
-    dcommit = svn dcommit
-    fmerge = merge --ff-only
     update = !git push origin :refs/heads/dummy && git fetch
-    svnversion = !"git svn find-rev $( git rev-parse trunk )"
-    find = !git rev-list --all --abbrev-commit | xargs git grep -F
     commit-files = diff-tree --no-commit-id --name-only -r
-    fixws = !"\
-          if (! git diff-files --quiet .) && \
-             (! git diff-index --quiet --cached HEAD) ; then \
-            git commit -m FIXWS_SAVE_INDEX && \
-            git stash save FIXWS_SAVE_TREE && \
-            git rebase --whitespace=fix HEAD~ && \
-            git reset --soft HEAD~ && \
-            git stash pop ; \
-          elif (! git diff-index --quiet --cached HEAD) ; then \
-            git commit -m FIXWS_SAVE_INDEX && \
-            git rebase --whitespace=fix HEAD~ && \
-            git reset --soft HEAD~ ; \
-          fi"
-    who = shortlog -s --
-    delmerged = !"git branch --merged | grep -v '\\*' | egrep -v 'master|develop|production|staging|uat' | xargs -n 1 git branch -d"
-    pushme = push -u origin HEAD
+    delmerged = !"git branch --merged | grep -v '\\*' | grep -Ev 'master' | xargs -n 1 git branch -d"
 
 [help]
     autocorrect = 1
+
 [core]
     editor = vim
     excludesfile = ~/.gitignore
-    #pager = diff-highlight | diff-so-fancy | less --tabs=1,5 -XRF
+    # requires that diff-highlight from the git project has been placed on the PATH
+    # shows word-level diffs
     pager = diff-highlight | less --tabs=1,5 -XRF
-[svn]
-    rmdir = true
+    # even fancier diffs
+    #pager = diff-highlight | diff-so-fancy | less --tabs=1,5 -XRF
+
 [push]
     # requires git > 1.8.0
     default = simple
+
 [fetch]
     prune = true
 [diff]
-    tool = meld
     #algorithm = patience
     ; compactionHeuristic = true
     colorMoved = zebra
@@ -89,9 +74,8 @@
     changed = yellow
     untracked = red
 
-[url "bwm@git.knewton.net:29418"]
-    insteadOf = https://git.knewton.net/
 [merge]
     conflictstyle = diff3
+
 [github]
     user = quodlibetor

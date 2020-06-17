@@ -1,0 +1,147 @@
+#!/usr/bin/env zsh
+
+# Lines configured by zsh-newuser-install
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+if [[ -n $JUST_WANT_PATH ]] ; then
+    return
+fi
+HISTFILE=~/.histfile
+HISTSIZE=100000
+SAVEHIST=100000
+setopt extendedglob notify
+unsetopt nomatch
+bindkey -e
+# End of lines configured by zsh-newuser-install
+# The following lines were added by compinstall
+zstyle :compinstall filename '/Users/bwm/.zshrc'
+
+fpath=($fpath $HOME/.local/zsh-completions)
+autoload -Uz compinit
+compinit
+# End of lines added by compinstall
+
+# I should probably figure out how to make this work the same as all the other compdefs
+#compdef _pastel pastel
+
+export PATH="/Users/bwm/Library/Python/3.8/bin:/Users/bwm/Library/Python/3.7/bin:$PATH"
+
+autoload edit-command-line
+zle -N edit-command-line
+bindkey "^X^E" edit-command-line
+
+### Added by Zplugin's installer
+source '/Users/bwm/.zplugin/bin/zplugin.zsh'
+autoload -Uz _zplugin
+(( ${+_comps} )) && _comps[zplugin]=_zplugin
+### End of Zplugin's installer chunk
+# zplugins, http://zdharma.org/zplugin/wiki/INTRODUCTION/
+
+zplugin light romkatv/powerlevel10k
+zplugin light zdharma/fast-syntax-highlighting
+zplugin ice blockf wait silent
+zplugin light zsh-users/zsh-completions
+#zplugin ice wait atload'_zsh_autosuggest_start'
+#zplugin light zsh-users/zsh-autosuggestions
+zplugin ice wait silent
+zplugin snippet OMZ::plugins/autojump/autojump.plugin.zsh
+export CASE_SENSITIVE=false
+zplugin ice wait silent
+zplugin snippet OMZ::lib/completion.zsh
+zplugin ice svn wait silent
+zplugin snippet PZT::modules/docker
+zplugin ice as"completion" silent
+zplugin ice pick'jwilm/alacritty/extra/completions/_alacritty'
+zplugin ice svn wait silent
+zplugin snippet PZT::modules/python
+zplugin ice wait'0' atload'__zplg_async_run' silent
+zplugin light _local---pyenv-venvw
+
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
+
+alias -r ls=exa
+alias -r ll="ls -l"
+alias -r ll="ls -la"
+alias -r grep="grep --color=auto"
+alias -r e="emacsclient --no-wait --socket-name=${HOME}/.emacs.d/server/server"
+alias -r rg="rg --smart-case"
+alias -r dc="docker-compose"
+
+psgrep() {
+    ps -eo 'pid ppid %cpu %mem etime args' | rg --color=always "(PID|$1)" | rg -v -w "rg"
+}
+
+# github clone
+ghc() {
+    (
+        cd "$MATERIALIZE_GIT_ROOT" || return 1
+        git clone "$1"
+    )
+    local bn="${1##*/}"
+    bn="${bn%%.*}"
+    # show where it was cloned and put `cd $clonedir` in the clipboard
+    echo
+    echo "$MATERIALIZE_GIT_ROOT/${bn}" | tee >( echo -n "cd $(cat -)" | tr -d $'\n' | pbcopy)
+}
+
+#export RUSTC_WRAPPER=/Users/bwm/.cargo/bin/sccache
+
+export GOPATH=$HOME/go
+export GOROOT=/usr/local/opt/go/libexec
+export PATH=$PATH:$GOPATH/bin
+export PATH=$PATH:$GOROOT/bin
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+export FZF_DEFAULT_COMMAND='fd'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+
+# history
+setopt extended_history       # record timestamp of command in HISTFILE
+setopt hist_ignore_space      # ignore commands that start with space
+setopt hist_verify            # show command with history expansion to user before running it
+setopt inc_append_history     # add commands to HISTFILE in order of execution
+setopt share_history          # share command history data
+# duplicate detection
+setopt hist_expire_dups_first # delete duplicates first when HISTFILE size exceeds HISTSIZE
+setopt hist_ignore_dups       # ignore duplicated commands history list
+setopt hist_ignore_all_dups   # Delete old recorded entry if new entry is a duplicate
+setopt hist_save_no_dups      # Don't write duplicate entries in the history file
+
+# see /Users/bwm/Library/Preferences/org.dystroy.broot/conf.toml for broot config
+source /Users/bwm/Library/Preferences/org.dystroy.broot/launcher/bash/br
+export MATERIALIZE_SH="$HOME/.materialize.sh"
+source "$MATERIALIZE_SH"
+source "$HOME/.local.sh"
+alias lzd='lazydocker'
+alias -r i='/Users/bwm/github/infra/i'
+export path=("$HOME/github/materialize/bin" $path)
+ussh() {
+    ip="$1" && shift
+    ssh "$@" ubuntu@"$ip"
+}
+
+# added by travis gem
+[ -f /Users/bwm/.travis/travis.sh ] && source /Users/bwm/.travis/travis.sh
+
+
+function vterm_printf(){
+    if [ -n "$TMUX" ]; then
+        # Tell tmux to pass the escape sequences through
+        # (Source: http://permalink.gmane.org/gmane.comp.terminal-emulators.tmux.user/1324)
+        printf "\ePtmux;\e\e]%s\007\e\\" "$1"
+    elif [ "${TERM%%-*}" = "screen" ]; then
+        # GNU screen (screen, screen-256color, screen-256color-bce)
+        printf "\eP\e]%s\007\e\\" "$1"
+    else
+        printf "\e]%s\e\\" "$1"
+    fi
+}
+if [[ "$INSIDE_EMACS" = 'vterm' ]]; then
+    # alias clear='vterm_printf "51;Evterm-clear-scrollback";tput clear'
+    prompt_vterm_end() {
+        vterm_printf "51;A$(whoami)@$(hostname):$(pwd)";
+    }
+    POWERLEVEL9K_LEFT_PROMPT_ELEMENTS+=vterm_end
+fi
+export LESSOPEN='|/usr/local/bin/lesspipe.sh %s' LESS_ADVANCED_PREPROCESSOR=1

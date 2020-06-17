@@ -38,22 +38,22 @@ autoload -Uz _zplugin
 
 zplugin light romkatv/powerlevel10k
 zplugin light zdharma/fast-syntax-highlighting
-zplugin ice blockf wait silent
+zplugin ice blockf wait lucid
 zplugin light zsh-users/zsh-completions
 #zplugin ice wait atload'_zsh_autosuggest_start'
 #zplugin light zsh-users/zsh-autosuggestions
-zplugin ice wait silent
+zplugin ice wait lucid
 zplugin snippet OMZ::plugins/autojump/autojump.plugin.zsh
 export CASE_SENSITIVE=false
-zplugin ice wait silent
+zplugin ice wait lucid
 zplugin snippet OMZ::lib/completion.zsh
-zplugin ice svn wait silent
+zplugin ice svn wait lucid
 zplugin snippet PZT::modules/docker
-zplugin ice as"completion" silent
+zplugin ice as"completion" lucid
 zplugin ice pick'jwilm/alacritty/extra/completions/_alacritty'
-zplugin ice svn wait silent
+zplugin ice svn wait lucid
 zplugin snippet PZT::modules/python
-zplugin ice wait'0' atload'__zplg_async_run' silent
+zplugin ice wait'0' atload'__zplg_async_run' lucid
 zplugin light _local---pyenv-venvw
 
 

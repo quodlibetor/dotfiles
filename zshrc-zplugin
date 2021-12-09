@@ -1,7 +1,8 @@
 #!/usr/bin/env zsh
 
 # Lines configured by zsh-newuser-install
-export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+typeset -U PATH
+export PATH="$HOME/.local/clang/bin:$HOME/.local/bin:$HOME/.cargo/bin:$PATH:/usr/local/bin:/usr/local/sbin:/usr/local/opt/terraform@0.13/bin"
 if [[ -n $JUST_WANT_PATH ]] ; then
     return
 fi
@@ -15,7 +16,7 @@ bindkey -e
 # The following lines were added by compinstall
 zstyle :compinstall filename '/Users/bwm/.zshrc'
 
-fpath=($fpath $HOME/.local/zsh-completions)
+fpath=($fpath $HOME/.local/zsh-completions $HOME/.zplugin/completions)
 autoload -Uz compinit
 compinit
 # End of lines added by compinstall
@@ -23,48 +24,78 @@ compinit
 # I should probably figure out how to make this work the same as all the other compdefs
 #compdef _pastel pastel
 
-export PATH="/Users/bwm/Library/Python/3.8/bin:/Users/bwm/Library/Python/3.7/bin:$PATH"
+#export PATH="/Users/bwm/Library/Python/3.8/bin:/Users/bwm/Library/Python/3.7/bin:$PATH"
+# commandlinetools overwrites the llvm that cargo wants, I think
+export PATH="$PATH:/Library/Developer/CommandLineTools/usr/bin"
+export SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX11.3.sdk
 
+# Open current command line in vim
 autoload edit-command-line
 zle -N edit-command-line
 bindkey "^X^E" edit-command-line
 
 ### Added by Zplugin's installer
-source '/Users/bwm/.zplugin/bin/zplugin.zsh'
-autoload -Uz _zplugin
-(( ${+_comps} )) && _comps[zplugin]=_zplugin
+source '/Users/bwm/.zplugin/bin/zinit.zsh'
+autoload -Uz _zinit
+(( ${+_comps} )) && _comps[zinit]=_zinit
 ### End of Zplugin's installer chunk
 # zplugins, http://zdharma.org/zplugin/wiki/INTRODUCTION/
 
-zplugin light romkatv/powerlevel10k
-zplugin light zdharma/fast-syntax-highlighting
-zplugin ice blockf wait lucid
-zplugin light zsh-users/zsh-completions
-#zplugin ice wait atload'_zsh_autosuggest_start'
-#zplugin light zsh-users/zsh-autosuggestions
-zplugin ice wait lucid
-zplugin snippet OMZ::plugins/autojump/autojump.plugin.zsh
+zinit light zdharma/fast-syntax-highlighting
+# TAB COMPLETIONS
+zinit ice wait"0b" lucid blockf
+zinit light zsh-users/zsh-completions
+zstyle ':completion:*' completer _expand _complete _ignored _approximate
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+zstyle ':completion:*' menu select=2
+zstyle ':completion:*' select-prompt '%SScrolling active: current selection at %p%s'
+zstyle ':completion:*:descriptions' format '-- %d --'
+zstyle ':completion:*:processes' command 'ps -au$USER'
+zstyle ':completion:complete:*:options' sort false
+zstyle ':fzf-tab:complete:_zlua:*' query-string input
+zstyle ':completion:*:*:*:*:processes' command "ps -u $USER -o pid,user,comm,cmd -w -w"
+zstyle ':fzf-tab:complete:kill:argument-rest' extra-opts --preview=$extract'ps --pid=$in[(w)1] -o cmd --no-headers -w -w' --preview-window=down:3:wrap
+zstyle ":completion:*:git-checkout:*" sort false
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+
+#zinit ice wait atload'_zsh_autosuggest_start'
+#zinit light zsh-users/zsh-autosuggestions
+zinit ice wait lucid
+zinit snippet OMZ::plugins/autojump/autojump.plugin.zsh
 export CASE_SENSITIVE=false
-zplugin ice wait lucid
-zplugin snippet OMZ::lib/completion.zsh
-zplugin ice svn wait lucid
-zplugin snippet PZT::modules/docker
-zplugin ice as"completion" lucid
-zplugin ice pick'jwilm/alacritty/extra/completions/_alacritty'
-zplugin ice svn wait lucid
-zplugin snippet PZT::modules/python
-zplugin ice wait'0' atload'__zplg_async_run' lucid
-zplugin light _local---pyenv-venvw
+zinit ice wait lucid
+zinit snippet OMZ::lib/completion.zsh
+
+zinit ice as"completion"
+zinit snippet https://github.com/docker/cli/blob/master/contrib/completion/zsh/_docker
+
+zinit ice as"completion" lucid
+zinit ice pick'jwilm/alacritty/extra/completions/_alacritty'
+zinit ice svn wait'0' lucid
+zinit snippet PZT::modules/python
+zinit ice wait'0' atload'__zplg_async_run' lucid
+zinit light _local---pyenv-venvw
+export NVM_AUTO_USE=true
+zinit ice wait"1" lucid
+zinit light lukechilds/zsh-nvm
+
+zinit ice wait lucid
+zinit load 'wfxr/forgit'
+
+if which pyenv-virtualenv-init > /dev/null; then eval "$(pyenv virtualenv-init -)"; fi
 
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
+# zinit light romkatv/powerlevel10k
+# [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
+eval "$(starship init zsh)"
 
 alias -r ls=exa
 alias -r ll="ls -l"
 alias -r ll="ls -la"
 alias -r grep="grep --color=auto"
 alias -r e="emacsclient --no-wait --socket-name=${HOME}/.emacs.d/server/server"
+alias -r et="emacsclient --tty --socket-name=${HOME}/.emacs.d/server/server"
 alias -r rg="rg --smart-case"
 alias -r dc="docker-compose"
 
@@ -100,7 +131,6 @@ export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 setopt extended_history       # record timestamp of command in HISTFILE
 setopt hist_ignore_space      # ignore commands that start with space
 setopt hist_verify            # show command with history expansion to user before running it
-setopt inc_append_history     # add commands to HISTFILE in order of execution
 setopt share_history          # share command history data
 # duplicate detection
 setopt hist_expire_dups_first # delete duplicates first when HISTFILE size exceeds HISTSIZE
@@ -113,19 +143,19 @@ source /Users/bwm/Library/Preferences/org.dystroy.broot/launcher/bash/br
 export MATERIALIZE_SH="$HOME/.materialize.sh"
 source "$MATERIALIZE_SH"
 source "$HOME/.local.sh"
-alias lzd='lazydocker'
+alias -r lzd='lazydocker'
+alias -r lzg='lazygit'
 alias -r i='/Users/bwm/github/infra/i'
+# docker stop all
+alias dsa='docker stop $(docker ps -q)'
+
 export path=("$HOME/github/materialize/bin" $path)
 ussh() {
     ip="$1" && shift
     ssh "$@" ubuntu@"$ip"
 }
 
-# added by travis gem
-[ -f /Users/bwm/.travis/travis.sh ] && source /Users/bwm/.travis/travis.sh
-
-
-function vterm_printf(){
+function vterm_printf() {
     if [ -n "$TMUX" ]; then
         # Tell tmux to pass the escape sequences through
         # (Source: http://permalink.gmane.org/gmane.comp.terminal-emulators.tmux.user/1324)
@@ -145,3 +175,10 @@ if [[ "$INSIDE_EMACS" = 'vterm' ]]; then
     POWERLEVEL9K_LEFT_PROMPT_ELEMENTS+=vterm_end
 fi
 export LESSOPEN='|/usr/local/bin/lesspipe.sh %s' LESS_ADVANCED_PREPROCESSOR=1
+export MZ_DEV=1
+#export PATH="/usr/local/opt/llvm/bin:$PATH"
+export CONFLUENT_HOME=/Users/bwm/.local/confluent
+# enabling these causes trait-resolution compilation errors
+#export CARGO_PROFILE_DEV_DEBUG=1
+#export RUSTFLAGS=" -Csplit-debuginfo=unpacked -Clink-arg=-fuse-ld=lld"
+alias clx='confluent local services stop'

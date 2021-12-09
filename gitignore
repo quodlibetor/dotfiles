@@ -1,4 +1,4 @@
-#git
+# git
 .subgit
 .svn
 # emacs
@@ -35,6 +35,11 @@ dist/
 *flycheck*
 .tern-project
 .nvmrc
+/.projectile
+
 # IDEs
 /.vscode
 /.idea
+
+# other ignores
+/.ignore

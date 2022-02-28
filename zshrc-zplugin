@@ -34,6 +34,14 @@ autoload edit-command-line
 zle -N edit-command-line
 bindkey "^X^E" edit-command-line
 
+# autoload -U insert-last-word
+# zle -N insert-last-word
+# bindkey '^[.' insert-last-word
+
+autoload -U copy-earlier-word
+zle -N copy-earlier-word
+bindkey '^[,' copy-earlier-word
+
 ### Added by Zplugin's installer
 source '/Users/bwm/.zplugin/bin/zinit.zsh'
 autoload -Uz _zinit
@@ -82,7 +90,13 @@ zinit light lukechilds/zsh-nvm
 zinit ice wait lucid
 zinit load 'wfxr/forgit'
 
-if which pyenv-virtualenv-init > /dev/null; then eval "$(pyenv virtualenv-init -)"; fi
+if command -v pyenv >/dev/null ; then
+    export PATH="$HOME/.pyenv/shims:$PATH"
+    eval "$(pyenv init -)"
+fi
+if command -v pyenv-virtualenv-init > /dev/null; then
+    eval "$(pyenv virtualenv-init -)"
+fi
 
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
@@ -155,6 +169,35 @@ ussh() {
     ssh "$@" ubuntu@"$ip"
 }
 
+# mzcli for mzccompose
+mzcc() {
+    local service=$1
+    if [[ -z $service ]]; then
+        echo "usage: $0 WORKFLOW [mzcli_args...]"
+        return 1
+    fi
+    shift
+    (
+        local tmpfile
+        tmpfile=$(mktemp /tmp/mzclis.XXXXX)
+        exec 3>"$tmpfile"
+        exec 4<"$tmpfile"
+        rm "$tmpfile"
+
+        echo "Finding port for $service"
+        local endpoint
+        endpoint=$(mzcompose --find "$service" port materialized 6875 2>&3)
+        if [[ $? != 0 ]] ; then
+            cat <&4
+            return 1
+        fi
+        port=$( echo $endpoint |  awk -F : '{print $2 }' )
+        exec 3>&-
+        exec mzcli -p $port "$@"
+    )
+}
+
+
 function vterm_printf() {
     if [ -n "$TMUX" ]; then
         # Tell tmux to pass the escape sequences through
@@ -182,3 +225,4 @@ export CONFLUENT_HOME=/Users/bwm/.local/confluent
 #export CARGO_PROFILE_DEV_DEBUG=1
 #export RUSTFLAGS=" -Csplit-debuginfo=unpacked -Clink-arg=-fuse-ld=lld"
 alias clx='confluent local services stop'
+alias -r http=xh

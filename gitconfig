@@ -3,60 +3,75 @@
 
 [alias]
     st = status
-    sb = status --short --branch
-    s = status --short
+    s = status --short --branch
     ci = commit
     co = checkout
-    # show the diff that is about to be committed
-    ix = diff --cached
-    # better `git log` views
-    lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=iso
-    lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative --branches=* --remotes=*
-    lgs = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15
-    lgsa = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -15 --branches=* --remotes=*
-    bt = !"git lga --simplify-by-decoration | grep -v 'tag[^,]*)' | grep -Ev $( git branch --all --merged  | sed -E -e 's/ //g' -e '/^\\*/d' | tr '\n' '|' | sed -E 's/(\\|$|^\\|)//g' )"
-    # commands tools to figure out how your branch has diverged from upstream
-    branchtree = !"git lga --simplify-by-decoration"
-    branchfiles = !"git diff --name-only @ $(git merge-base @ master)"
+    # update main
+    sync = fetch origin main:main
+
+    # Basic format for all log calls
+    # (nb aliases aren't allowed to have underscores)
+    lg-base = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%ci) %C(bold blue)<%an>%Creset' --abbrev-commit
+    lg-exclude-prs = lg-base --decorate-refs-exclude='refs/pullreqs/*'
+
+    # log commands
+    lg = lg-exclude-prs
+    lga = lg --branches=* --remotes=*
+    # log short -- only 15 commits
+    lgs = lg -15
+    lgsa = lgs --branches=* --remotes=*
+    # log with prs
+    lgp = lg-base
+    lgpa = lgp --branches=* --remotes=*
+
+    # highlight branches
+    tree-base = lga --simplify-by-decoration --decorate-refs-exclude='refs/pullreqs/*' --decorate-refs-exclude='refs/tags/*'
+    tree = tree-base --decorate-refs-exclude='refs/remotes/*/*'
+
+    # unmerged branches
+    bt = !"git tree-base --color=always | grep -Ev $( git branch --all --merged  | sed -E -e 's/ //g' -e '/^\\*/d' | tr '\n' '|' | sed -E 's/(\\|$|^\\|)//g' ) | less -XRF"
+    branchfiles = !"git diff --name-only @ $(git merge-base @ main)"
     mergedfiles = !"git diff --name-only HEAD^2 $(git merge-base HEAD^2 HEAD^ )"
-    root = !pwd
-    update = !git push origin :refs/heads/dummy && git fetch
+    ix = diff --cached
+    root = rev-parse --show-toplevel
+    find = !git rev-list --all --abbrev-commit | xargs git grep -F
+    which-pr = describe --all --contains
     commit-files = diff-tree --no-commit-id --name-only -r
-    delmerged = !"git branch --merged | grep -v '\\*' | grep -Ev 'master' | xargs -n 1 git branch -d"
+    who = shortlog -s --
+    delmerged = !"git branch --merged | rg -v '\\*|master' | xargs -n 1 git branch -d"
+    clean-branches = !"git delmerged"
+    pushf = push --force-with-lease
 
 [help]
     autocorrect = 1
 
 [core]
     editor = vim
-    excludesfile = ~/.gitignore
-    # requires that diff-highlight from the git project has been placed on the PATH
-    # shows word-level diffs
-    pager = diff-highlight | less --tabs=1,5 -XRF
-    # even fancier diffs
-    #pager = diff-highlight | diff-so-fancy | less --tabs=1,5 -XRF
+    pager = delta --dark '--theme=Dracula'
+
+[interactive]
+    diffFilter = delta --color-only
 
 [push]
-    # requires git > 1.8.0
     default = simple
-
 [fetch]
     prune = true
 [diff]
-    #algorithm = patience
-    ; compactionHeuristic = true
+    algorithm = histogram
     colorMoved = zebra
     indentHeuristic = true
-#[grep]
-#    patternType = perl
+    submodule = log
+
 [rebase]
     autosquash = true
     autoStash = true
 
 [pull]
     rebase = true
+
 [color]
     ui = true
+
 ; [color "diff"]
 ;     meta = yellow bold
 ;     commit = green bold
@@ -69,6 +84,7 @@
 ;     oldHighlight = "red bold 52"
 ;     newNormal = "green bold"
 ;     newHighlight = "green bold 22"
+
 [color "status"]
     added = green
     changed = yellow
@@ -79,3 +95,24 @@
 
 [github]
     user = quodlibetor
+
+[submodule]
+    recurse = true
+
+[remote "origin"]
+    prune = true
+
+[remote "me"]
+    prune = true
+
+[rerere]
+    enabled = true
+
+[init]
+    defaultBranch = main
+
+[delta]
+    side-by-side = false
+
+[advice]
+    detachedHead = false

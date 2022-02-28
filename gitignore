@@ -43,3 +43,6 @@ dist/
 
 # other ignores
 /.ignore
+
+# General notes
+/work.org

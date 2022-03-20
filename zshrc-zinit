@@ -118,6 +118,11 @@ zinit light lukechilds/zsh-nvm
 zinit ice wait lucid
 zinit load 'wfxr/forgit'
 
+# install the httpie-equivalent xh, aliased to 'http'
+zinit as"null" wait"2" lucid from"gh-r" for \
+    light-mode mv"xh*/xh -> xh" sbin"xh -> http" atinit"zinit creinstall -Q ducaale/xh" ducaale/xh
+
+
 if command -v pyenv >/dev/null ; then
     export PATH="$HOME/.pyenv/shims:$PATH"
     eval "$(pyenv init -)"
@@ -213,4 +218,3 @@ if [[ "$INSIDE_EMACS" = 'vterm' ]]; then
     POWERLEVEL9K_LEFT_PROMPT_ELEMENTS+=vterm_end
 fi
 export LESSOPEN='|/usr/local/bin/lesspipe.sh %s' LESS_ADVANCED_PREPROCESSOR=1
-alias -r http=xh

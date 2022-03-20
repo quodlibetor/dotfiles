@@ -1,0 +1,19 @@
+#!/usr/bin/env zsh
+brew install \
+    coreutils \
+    exa \
+    fzf \
+    git \
+    nvim \
+    starship \
+    subversion \
+    tmux \
+    zsh \
+    ;
+
+brew install --cask \
+    rectangle \
+    ;
+
+mkdir -p ~/.tmux/plugins
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm

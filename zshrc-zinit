@@ -42,12 +42,34 @@ autoload -U copy-earlier-word
 zle -N copy-earlier-word
 bindkey '^[,' copy-earlier-word
 
-### Added by Zplugin's installer
-source '/Users/bwm/.zplugin/bin/zinit.zsh'
+### Added by Zinit's installer
+# https://github.com/zdharma-continuum/zinit
+if [[ ! -f $HOME/.local/share/zinit/zinit.git/zinit.zsh ]]; then
+    print -P "%F{33}▓▒░ %F{220}Installing %F{33}ZDHARMA-CONTINUUM%F{220} Initiative Plugin Manager (%F{33}zdharma-continuum/zinit%F{220})…%f"
+    command mkdir -p "$HOME/.local/share/zinit" && command chmod g-rwX "$HOME/.local/share/zinit"
+    command git clone https://github.com/zdharma-continuum/zinit "$HOME/.local/share/zinit/zinit.git" && \
+        print -P "%F{33}▓▒░ %F{34}Installation successful.%f%b" || \
+        print -P "%F{160}▓▒░ The clone has failed.%f%b"
+fi
+ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
+source "${ZINIT_HOME}/zinit.zsh"
+
 autoload -Uz _zinit
 (( ${+_comps} )) && _comps[zinit]=_zinit
-### End of Zplugin's installer chunk
-# zplugins, http://zdharma.org/zplugin/wiki/INTRODUCTION/
+
+# Load a few important annexes, without Turbo
+# (this is currently required for annexes)
+zinit light-mode for \
+    zdharma-continuum/zinit-annex-as-monitor \
+    zdharma-continuum/zinit-annex-bin-gem-node \
+    zdharma-continuum/zinit-annex-patch-dl \
+    zdharma-continuum/zinit-annex-rust
+
+### End of Zinit's installer chunk
+
+zinit as"null" wait"2" lucid from"gh-r" for \
+    mv"exa* -> exa" sbin       ogham/exa \
+    sbin"fzf"  junegunn/fzf-bin
 
 zinit light zdharma/fast-syntax-highlighting
 # TAB COMPLETIONS
@@ -68,9 +90,15 @@ zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 
 #zinit ice wait atload'_zsh_autosuggest_start'
 #zinit light zsh-users/zsh-autosuggestions
-zinit ice wait lucid
-zinit snippet OMZ::plugins/autojump/autojump.plugin.zsh
-export CASE_SENSITIVE=false
+
+# Install zoxide from the container registry, and then its plugin
+# Install it as j instead of z
+zinit ice wait"2" as"command" from"gh-r" lucid \
+  mv"zoxide*/zoxide -> zoxide" \
+  atclone"./zoxide init --cmd j zsh > init.zsh" \
+  atpull"%atclone" src"init.zsh" nocompile'!'
+zinit light ajeetdsouza/zoxide
+
 zinit ice wait lucid
 zinit snippet OMZ::lib/completion.zsh
 
@@ -99,10 +127,7 @@ if command -v pyenv-virtualenv-init > /dev/null; then
 fi
 
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-# zinit light romkatv/powerlevel10k
-# [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
-eval "$(starship init zsh)"
+command -v starship >/dev/null && eval "$(starship init zsh)"
 
 alias -r ls=exa
 alias -r ll="ls -l"
@@ -118,16 +143,17 @@ psgrep() {
 }
 
 # github clone
+REPO_DIR="$HOME/repos"
 ghc() {
     (
-        cd "$MATERIALIZE_GIT_ROOT" || return 1
+        cd "$REPO_DIR" || return 1
         git clone "$1"
     )
     local bn="${1##*/}"
     bn="${bn%%.*}"
     # show where it was cloned and put `cd $clonedir` in the clipboard
     echo
-    echo "$MATERIALIZE_GIT_ROOT/${bn}" | tee >( echo -n "cd $(cat -)" | tr -d $'\n' | pbcopy)
+    echo "$REPO_DIR/${bn}" | tee >( echo -n "cd $(cat -)" | tr -d $'\n' | pbcopy)
 }
 
 #export RUSTC_WRAPPER=/Users/bwm/.cargo/bin/sccache
@@ -153,13 +179,11 @@ setopt hist_ignore_all_dups   # Delete old recorded entry if new entry is a dupl
 setopt hist_save_no_dups      # Don't write duplicate entries in the history file
 
 # see /Users/bwm/Library/Preferences/org.dystroy.broot/conf.toml for broot config
-source /Users/bwm/Library/Preferences/org.dystroy.broot/launcher/bash/br
-export MATERIALIZE_SH="$HOME/.materialize.sh"
-source "$MATERIALIZE_SH"
-source "$HOME/.local.sh"
+[[ -f "$HOME/.local.sh" ]] && source "$HOME/.local.sh"
+
 alias -r lzd='lazydocker'
 alias -r lzg='lazygit'
-alias -r i='/Users/bwm/github/infra/i'
+alias -r vim=nvim
 # docker stop all
 alias dsa='docker stop $(docker ps -q)'
 
@@ -168,35 +192,6 @@ ussh() {
     ip="$1" && shift
     ssh "$@" ubuntu@"$ip"
 }
-
-# mzcli for mzccompose
-mzcc() {
-    local service=$1
-    if [[ -z $service ]]; then
-        echo "usage: $0 WORKFLOW [mzcli_args...]"
-        return 1
-    fi
-    shift
-    (
-        local tmpfile
-        tmpfile=$(mktemp /tmp/mzclis.XXXXX)
-        exec 3>"$tmpfile"
-        exec 4<"$tmpfile"
-        rm "$tmpfile"
-
-        echo "Finding port for $service"
-        local endpoint
-        endpoint=$(mzcompose --find "$service" port materialized 6875 2>&3)
-        if [[ $? != 0 ]] ; then
-            cat <&4
-            return 1
-        fi
-        port=$( echo $endpoint |  awk -F : '{print $2 }' )
-        exec 3>&-
-        exec mzcli -p $port "$@"
-    )
-}
-
 
 function vterm_printf() {
     if [ -n "$TMUX" ]; then
@@ -218,11 +213,4 @@ if [[ "$INSIDE_EMACS" = 'vterm' ]]; then
     POWERLEVEL9K_LEFT_PROMPT_ELEMENTS+=vterm_end
 fi
 export LESSOPEN='|/usr/local/bin/lesspipe.sh %s' LESS_ADVANCED_PREPROCESSOR=1
-export MZ_DEV=1
-#export PATH="/usr/local/opt/llvm/bin:$PATH"
-export CONFLUENT_HOME=/Users/bwm/.local/confluent
-# enabling these causes trait-resolution compilation errors
-#export CARGO_PROFILE_DEV_DEBUG=1
-#export RUSTFLAGS=" -Csplit-debuginfo=unpacked -Clink-arg=-fuse-ld=lld"
-alias clx='confluent local services stop'
 alias -r http=xh

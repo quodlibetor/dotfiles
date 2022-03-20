@@ -1,5 +1,7 @@
 #!/usr/bin/env zsh
+
 brew install \
+    asdf \
     coreutils \
     exa \
     fzf \

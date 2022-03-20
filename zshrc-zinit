@@ -110,10 +110,6 @@ zinit ice pick'jwilm/alacritty/extra/completions/_alacritty'
 zinit ice svn wait'0' lucid
 zinit snippet PZT::modules/python
 zinit ice wait'0' atload'__zplg_async_run' lucid
-zinit light _local---pyenv-venvw
-export NVM_AUTO_USE=true
-zinit ice wait"1" lucid
-zinit light lukechilds/zsh-nvm
 
 zinit ice wait lucid
 zinit load 'wfxr/forgit'
@@ -122,15 +118,9 @@ zinit load 'wfxr/forgit'
 zinit as"null" wait"2" lucid from"gh-r" for \
     light-mode mv"xh*/xh -> xh" sbin"xh -> http" atinit"zinit creinstall -Q ducaale/xh" ducaale/xh
 
-
-if command -v pyenv >/dev/null ; then
-    export PATH="$HOME/.pyenv/shims:$PATH"
-    eval "$(pyenv init -)"
+if [[ -f /usr/local/opt/asdf/libexec/asdf.sh ]]; then
+    source /usr/local/opt/asdf/libexec/asdf.sh
 fi
-if command -v pyenv-virtualenv-init > /dev/null; then
-    eval "$(pyenv virtualenv-init -)"
-fi
-
 
 command -v starship >/dev/null && eval "$(starship init zsh)"
 

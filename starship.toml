@@ -4,3 +4,8 @@ add_newline = false
 truncate_to_repo = false
 truncation_length = 15
 repo_root_style = "bright-green"
+
+[custom.vterm-emacs]
+command = '''printf '\e]%s\e\\' "51;A$(whoami)@$(hostname):$(pwd)"'''
+when = """test "$INSIDE_EMACS" = 'vterm' """
+format = "$output"

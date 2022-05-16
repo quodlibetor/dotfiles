@@ -3,11 +3,13 @@
 
 [alias]
     st = status
-    s = status --short --branch
+    s = status --short
     ci = commit
     co = checkout
-    # update main
-    sync = fetch origin main:main
+    # definitely more reliable, but probably not worth it, default branches don't change very often
+    # default-branch = !"git ls-remote --symref origin HEAD | awk -F'[/\t]' 'NR == 1 {print $3}'"
+    default-branch = !"git symbolic-ref refs/remotes/origin/HEAD | sed 's,^refs/remotes/origin/,,'"
+    sync = !"export branch=$(git default-branch) ; git fetch origin ${branch}:${branch}"
 
     # Basic format for all log calls
     # (nb aliases aren't allowed to have underscores)

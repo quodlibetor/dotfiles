@@ -44,6 +44,11 @@
     clean-branches = !"git delmerged"
     pushf = push --force-with-lease
 
+    # submodules
+    sdiff = !git diff && git submodule foreach 'git diff'
+    spush = push --recurse-submodules=on-demand
+    supdate = submodule update --remote --merge
+
 [help]
     autocorrect = 1
 
@@ -56,6 +61,10 @@
 
 [push]
     default = simple
+    # see also on-demand as an option
+    # https://git-scm.com/book/en/v2/Git-Tools-Submodules#_publishing_submodules
+    recurseSubmodules = check
+
 [fetch]
     prune = true
 [diff]
@@ -118,3 +127,6 @@
 
 [advice]
     detachedHead = false
+
+[status]
+    submodulesummary = 1

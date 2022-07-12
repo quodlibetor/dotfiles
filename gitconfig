@@ -2,15 +2,25 @@
     name = Brandon W Maister
 
 [alias]
+    # ==== General commit properties and actions
     st = status
     s = status --short
+    ix = diff --cached
     ci = commit
     co = checkout
+
+    # ==== Repo properties
+    root = rev-parse --show-toplevel
     # definitely more reliable, but probably not worth it, default branches don't change very often
     # default-branch = !"git ls-remote --symref origin HEAD | awk -F'[/\t]' 'NR == 1 {print $3}'"
     default-branch = !"git symbolic-ref refs/remotes/origin/HEAD | sed 's,^refs/remotes/origin/,,'"
-    sync = !"export branch=$(git default-branch) ; git fetch origin ${branch}:${branch}"
 
+    # ==== Interactions with the default branch
+    # make sure local copy of default branch is up to date
+    sync = !"export branch=$(git default-branch) ; export current=$(git branch --show-current); if [[ $current == $branch ]] ; then git pull ; else git fetch origin ${branch}:${branch} ; fi"
+    cleanup = !"git rebase -i $(git merge-base @ $(git default-branch))"
+
+    # ==== Logging
     # Basic format for all log calls
     # (nb aliases aren't allowed to have underscores)
     lg-base = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%ci) %C(bold blue)<%an>%Creset' --abbrev-commit
@@ -18,6 +28,7 @@
 
     # log commands
     lg = lg-exclude-prs
+    lgn = lg-exclude-prs --no-merges
     lga = lg --branches=* --remotes=*
     # log short -- only 15 commits
     lgs = lg -15
@@ -30,21 +41,14 @@
     tree-base = lga --simplify-by-decoration --decorate-refs-exclude='refs/pullreqs/*' --decorate-refs-exclude='refs/tags/*'
     tree = tree-base --decorate-refs-exclude='refs/remotes/*/*'
 
-    # unmerged branches
+    # ==== unmerged branches
     bt = !"git tree-base --color=always | grep -Ev $( git branch --all --merged  | sed -E -e 's/ //g' -e '/^\\*/d' | tr '\n' '|' | sed -E 's/(\\|$|^\\|)//g' ) | less -XRF"
     branchfiles = !"git diff --name-only @ $(git merge-base @ main)"
     mergedfiles = !"git diff --name-only HEAD^2 $(git merge-base HEAD^2 HEAD^ )"
-    ix = diff --cached
-    root = rev-parse --show-toplevel
-    find = !git rev-list --all --abbrev-commit | xargs git grep -F
     which-pr = describe --all --contains
-    commit-files = diff-tree --no-commit-id --name-only -r
-    who = shortlog -s --
-    delmerged = !"git branch --merged | rg -v '\\*|master' | xargs -n 1 git branch -d"
-    clean-branches = !"git delmerged"
     pushf = push --force-with-lease
 
-    # submodules
+    # ==== submodules
     sdiff = !git diff && git submodule foreach 'git diff'
     spush = push --recurse-submodules=on-demand
     supdate = submodule update --remote --merge

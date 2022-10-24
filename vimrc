@@ -24,7 +24,6 @@ set background=dark
 "if filereadable(expand("~/.vim/colors/distinguished.vim"))
 "    colorscheme distinguished
 "endif
-colorscheme solarized
 
 " jump to the last position when reopening a file
 if has("autocmd")

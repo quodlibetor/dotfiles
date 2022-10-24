@@ -2,7 +2,7 @@
 
 # Lines configured by zsh-newuser-install
 typeset -U PATH
-export PATH="$HOME/.local/clang/bin:$HOME/.local/bin:$HOME/.cargo/bin:$PATH:/usr/local/bin:/usr/local/sbin:/usr/local/opt/terraform@0.13/bin"
+export PATH="$HOME/.local/clang/bin:$HOME/.local/bin:$HOME/.cargo/bin:$HOME/go/bin:$PATH:/usr/local/bin:/usr/local/sbin"
 if [[ -n $JUST_WANT_PATH ]] ; then
     return
 fi
@@ -18,6 +18,7 @@ zstyle :compinstall filename '/Users/bwm/.zshrc'
 
 fpath=($fpath $HOME/.local/zsh-completions $HOME/.zplugin/completions)
 autoload -Uz compinit
+autoload -U bashcompinit
 compinit
 # End of lines added by compinstall
 
@@ -68,8 +69,7 @@ zinit light-mode for \
 ### End of Zinit's installer chunk
 
 zinit as"null" wait"2" lucid from"gh-r" for \
-    mv"exa* -> exa" sbin       ogham/exa \
-    sbin"fzf"  junegunn/fzf-bin
+    mv"exa* -> exa" sbin       ogham/exa
 
 zinit light zdharma/fast-syntax-highlighting
 # TAB COMPLETIONS
@@ -82,9 +82,9 @@ zstyle ':completion:*' select-prompt '%SScrolling active: current selection at %
 zstyle ':completion:*:descriptions' format '-- %d --'
 zstyle ':completion:*:processes' command 'ps -au$USER'
 zstyle ':completion:complete:*:options' sort false
-zstyle ':fzf-tab:complete:_zlua:*' query-string input
+#zstyle ':fzf-tab:complete:_zlua:*' query-string input
 zstyle ':completion:*:*:*:*:processes' command "ps -u $USER -o pid,user,comm,cmd -w -w"
-zstyle ':fzf-tab:complete:kill:argument-rest' extra-opts --preview=$extract'ps --pid=$in[(w)1] -o cmd --no-headers -w -w' --preview-window=down:3:wrap
+#zstyle ':fzf-tab:complete:kill:argument-rest' extra-opts --preview=$extract'ps --pid=$in[(w)1] -o cmd --no-headers -w -w' --preview-window=down:3:wrap
 zstyle ":completion:*:git-checkout:*" sort false
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 
@@ -126,12 +126,33 @@ command -v starship >/dev/null && eval "$(starship init zsh)"
 
 alias -r ls=exa
 alias -r ll="ls -l"
-alias -r ll="ls -la"
+alias -r la="ls -la"
 alias -r grep="grep --color=auto"
+alias -r bg="batgrep"
 alias -r e="emacsclient --no-wait --socket-name=${HOME}/.emacs.d/server/server"
-alias -r et="emacsclient --tty --socket-name=${HOME}/.emacs.d/server/server"
+setup_emacs_terminfo_kitty() {
+    # source https://www.gnu.org/software/emacs/manual/html_node/efaq/Colors-on-a-TTY.html
+    tic -x -o ~/.terminfo <( cat <<EOF
+    xterm-emacs|xterm with 24-bit direct color mode for Emacs,
+  use=xterm-256color,
+  setb24=\E[48\:2\:\:%p1%{65536}%/%d\:%p1%{256}%/%{255}%&\
+     %d\:%p1%{255}%&%dm,
+  setf24=\E[38\:2\:\:%p1%{65536}%/%d\:%p1%{256}%/%{255}%&\
+     %d\:%p1%{255}%&%dm,
+EOF
+)
+}
+et() {
+    if [[ -n "$KITTY_WINDOW_ID" ]]; then
+        TERM=xterm-emacs emacsclient --tty --socket-name=${HOME}/.emacs.d/server/server "$@"
+    else
+        emacsclient --tty --socket-name=${HOME}/.emacs.d/server/server "$@"
+    fi
+}
 alias -r rg="rg --smart-case"
-alias -r dc="docker-compose"
+alias -r dc="docker compose"
+
+export EDITOR=vim
 
 psgrep() {
     ps -eo 'pid ppid %cpu %mem etime args' | rg --color=always "(PID|$1)" | rg -v -w "rg"
@@ -179,15 +200,83 @@ setopt hist_save_no_dups      # Don't write duplicate entries in the history fil
 alias -r lzd='lazydocker'
 alias -r lzg='lazygit'
 alias -r vim=nvim
+alias -r tf=terraform
+alias -r aplay="ansible-playbook"
 # docker stop all
 alias dsa='docker stop $(docker ps -q)'
+ssm() {
+    local fields="${GOSSM_FIELDS:-name,launch-time,id}"
+    gossm start --region us-east-2 --fields "$fields" "$@"
+}
+aws_token() {
+    unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+    username="${1?username is required}" && shift
+    token="${1?MFA token is required}" && shift
+    profile="${1}" && [[ "$#" -gt 1 ]] && shift
+    args=()
+    if [[ -n "$profile" ]]; then
+        args=(--profile "${profile}")
+    fi
+    eval $(\
+        aws sts \
+            "${args[@]}" \
+            get-session-token \
+            --token-code "$token" \
+            --serial-number "arn:aws:iam::934458803771:mfa/${username}" \
+            | jq -r '.Credentials | "export AWS_ACCESS_KEY_ID=" + (.AccessKeyId) + "\nexport AWS_SECRET_ACCESS_KEY=" + (.SecretAccessKey) + "\nexport AWS_SESSION_TOKEN=" + (.SessionToken)'
+   )
+}
 
-export path=("$HOME/github/materialize/bin" $path)
+# list all mounted volumes
+docker-mounts() {
+    if [[ -n $1 ]]; then
+        containers=($(docker ps | awk "/$1/ { print \$1 }"))
+    else
+        containers=($(docker ps -q))
+    fi
+    docker inspect \
+           -f '{{ .Name }}{{ range .Mounts }}{{ printf "\n\t" }}{{ .Type }} {{ if eq .Type "bind" }}{{ .Source }}{{ end }}{{ .Name }} => {{ .Destination }}{{ end }}' \
+           "${containers[@]}" \
+           ;
+}
+
+# Set the the built-in time format to be more like bash, with some goodies.
+export TIMEFMT='
+real	%E
+user	%U
+sys	%S
+%%cpu	%P
+maxmem	%M KB
+faults	%F'
+export TIME="$TIMEFMT"
+
 ussh() {
     ip="$1" && shift
     ssh "$@" ubuntu@"$ip"
 }
 
+shortcut_issues() {
+    shortcut_user=bwm
+
+    mode=${1:-dev}
+    case $mode in
+        dev) state='In Development' ;;
+	todo) state='To-Do' ;;
+        ice) state='Icebox' ;;
+        done|completed) state='Completed' ;;
+	*)
+	    echo "invalid state: $mode expected one of ice|todo|dev|done"
+            return 1
+	    ;;
+    esac
+    short search --state "$state" \
+          --owner "$shortcut_user" --format "$shortcut_user/sc-%id/%t" -q \
+        | tr '[:upper:]' '[:lower:]' \
+        | sed -E -e 's,(/[^/]+/[^/]+)/.*$,\1,' -e 's/ $//' -e 's/ /-/g' \
+        | fzf --height 5
+}
+
+# Vterm stuff, tells emacs which directory we're currently in
 function vterm_printf() {
     if [ -n "$TMUX" ]; then
         # Tell tmux to pass the escape sequences through
@@ -200,6 +289,7 @@ function vterm_printf() {
         printf "\e]%s\e\\" "$1"
     fi
 }
+
 if [[ "$INSIDE_EMACS" = 'vterm' ]]; then
     # alias clear='vterm_printf "51;Evterm-clear-scrollback";tput clear'
     prompt_vterm_end() {
@@ -208,3 +298,8 @@ if [[ "$INSIDE_EMACS" = 'vterm' ]]; then
     POWERLEVEL9K_LEFT_PROMPT_ELEMENTS+=vterm_end
 fi
 export LESSOPEN='|/usr/local/bin/lesspipe.sh %s' LESS_ADVANCED_PREPROCESSOR=1
+
+export ASDF_DIRENV_BIN="/Users/bwm/.asdf/installs/direnv/2.30.3/bin/direnv"
+eval "$(/Users/bwm/.asdf/installs/direnv/2.30.3/bin/direnv hook zsh)"
+# no idea where this is getting set
+unset GOROOT

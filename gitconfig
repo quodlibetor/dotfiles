@@ -13,11 +13,15 @@
     root = rev-parse --show-toplevel
     # definitely more reliable, but probably not worth it, default branches don't change very often
     # default-branch = !"git ls-remote --symref origin HEAD | awk -F'[/\t]' 'NR == 1 {print $3}'"
+    # To the default branch after it's been changed run `git remote set-head origin --auto`
     default-branch = !"git symbolic-ref refs/remotes/origin/HEAD | sed 's,^refs/remotes/origin/,,'"
 
     # ==== Interactions with the default branch
     # make sure local copy of default branch is up to date
-    sync = !"export branch=$(git default-branch) ; export current=$(git branch --show-current); if [[ $current == $branch ]] ; then git pull ; else git fetch origin ${branch}:${branch} ; fi"
+    #
+    # If the remote default branch is not named `main` sometimes I make my
+    # local default branch be main, so check for main first
+    sync = !"if (git rev-parse --verify main >/dev/null 2>&1) ; then export local=main ; else export local=$(git default-branch) ; fi ; export remote=$(git default-branch) ; export current=$(git branch --show-current); if [[ $current == $local ]] ; then git pull ; else git fetch origin ${remote}:${local} ; fi ; (git fetch origin &)"
     cleanup = !"git rebase -i $(git merge-base @ $(git default-branch))"
 
     # ==== Logging
@@ -128,6 +132,7 @@
 
 [delta]
     side-by-side = false
+    navigate = true
 
 [advice]
     detachedHead = false

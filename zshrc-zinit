@@ -2,7 +2,10 @@
 
 # Lines configured by zsh-newuser-install
 typeset -U PATH
-export PATH="$HOME/.local/clang/bin:$HOME/.local/bin:$HOME/.cargo/bin:$HOME/go/bin:$PATH:/usr/local/bin:/usr/local/sbin"
+export PATH="$HOME/.local/clang/bin:$HOME/.local/bin:$HOME/.cargo/bin:$HOME/go/bin:$PATH:/usr/local/bin:/usr/local/sbin:/opt/homebrew/opt/libpq/bin"
+for bindir in /opt/homebrew/opt/*/bin ; do
+    export PATH="$PATH:${bindir}"
+done
 if [[ -n $JUST_WANT_PATH ]] ; then
     return
 fi
@@ -88,8 +91,8 @@ zstyle ':completion:*:*:*:*:processes' command "ps -u $USER -o pid,user,comm,cmd
 zstyle ":completion:*:git-checkout:*" sort false
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 
-#zinit ice wait atload'_zsh_autosuggest_start'
-#zinit light zsh-users/zsh-autosuggestions
+zinit ice wait lucid atload'_zsh_autosuggest_start'
+zinit light zsh-users/zsh-autosuggestions
 
 # Install zoxide from the container registry, and then its plugin
 # Install it as j instead of z
@@ -276,6 +279,28 @@ shortcut_issues() {
         | fzf --height 5
 }
 
+drun() {
+    local usage="usage: drun IMAGE_NAME [COMMAND...]"
+    if [[ $# -eq 0  ]]; then
+        echo "$usage"
+        return 1
+    elif [[ "$*" =~ -h ]]; then
+        echo -n "$usage
+
+Run a docker image with the current directory mounted in the working dir
+"
+        return 0
+    fi
+
+    image_name=$1 && shift
+    if [[ $# -gt 0 ]]; then
+        command=("$@")
+    else
+        command=(bash)
+    fi
+    docker run -it --rm -v "$(pwd):/work" -w /work $image_name "${command[@]}"
+}
+
 # Vterm stuff, tells emacs which directory we're currently in
 function vterm_printf() {
     if [ -n "$TMUX" ]; then
@@ -297,9 +322,24 @@ if [[ "$INSIDE_EMACS" = 'vterm' ]]; then
     }
     POWERLEVEL9K_LEFT_PROMPT_ELEMENTS+=vterm_end
 fi
-export LESSOPEN='|/usr/local/bin/lesspipe.sh %s' LESS_ADVANCED_PREPROCESSOR=1
 
-export ASDF_DIRENV_BIN="/Users/bwm/.asdf/installs/direnv/2.30.3/bin/direnv"
-eval "$(/Users/bwm/.asdf/installs/direnv/2.30.3/bin/direnv hook zsh)"
+if [[ -f /usr/local/bin/lesspipe.sh ]]; then
+    export LESSOPEN='|/usr/local/bin/lesspipe.sh %s' LESS_ADVANCED_PREPROCESSOR=1
+elif [[ -f /opt/homebrew/bin/lesspipe.sh ]]; then
+    export LESSOPEN="|/opt/homebrew/bin/lesspipe.sh %s" LESS_ADVANCED_PREPROCESSOR=1
+fi
+
+if [[ -d /opt/homebrew/opt/llvm ]]; then
+    export LDFLAGS="-L/opt/homebrew/opt/llvm/lib $LDFLAGS"
+    export CPPFLAGS="-I/opt/homebrew/opt/llvm/include $LDFLAGS"
+fi
+
+enable_nvm() {
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && . "/opt/homebrew/opt/nvm/nvm.sh"
+  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && . "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+}
+
 # no idea where this is getting set
 unset GOROOT
+source "${XDG_CONFIG_HOME:-$HOME/.config}/asdf-direnv/zshrc"

@@ -9,8 +9,18 @@ runv() {
     "$@"
 }
 
-if ! which brew >/dev/null 2>&1; then
+brewcmd=""
+if which brew >/dev/null 2>&1; then
+    brewcmd="$(which brew)"
+elif [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
+    brewcmd=/home/linuxbrew/.linuxbrew/bin/brew
+else
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+    if [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
+        brewcmd=/home/linuxbrew/.linuxbrew/bin/brew
+    else
+        brewcmd=/opt/homebrew/bin/brew
+    fi
 fi
 
 # install targets that provide a different binary than the name of the target are "install_target:file_to_check_for"
@@ -59,14 +69,14 @@ for cmd in "${needed_commands[@]}"; do
 done
 
 if [[ "${#install_cmds[@]}" -gt 0 ]]; then
-    runv brew install "${install_cmds[@]}"
+    runv "$brewcmd" install "${install_cmds[@]}"
 fi
 
 # to upgrade wezterm:
 # brew upgrade --cask wezterm-nightly --no-quarantine --greedy-latest
-runv brew tap homebrew/cask-versions # needed for wezterm
+runv "$brewcmd" tap homebrew/cask-versions # needed for wezterm
 
-runv brew install --cask \
+runv "$brewcmd" install --cask \
   rectangle \
   wezterm-nightly \
   ;
@@ -76,7 +86,7 @@ if [[ ! -d $HOME/.tmux/plugins ]]; then
     runv git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 fi
 
-if ! which emacs >/dev/null 2>&1 ; then
+if ! which emacs >/dev/null 2>&1 && [[ "$(uname -s)" == Darwin ]] ; then
     # options are https://github.com/railwaycat/homebrew-emacsmacport/blob/master/Formula/emacs-mac.rb
     runv brew tap railwaycat/emacsmacport
     #--enable-mac-app \

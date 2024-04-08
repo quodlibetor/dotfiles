@@ -1,11 +1,27 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
 add_newline = false
 
 [directory]
 truncate_to_repo = false
 truncation_length = 15
+truncation_symbol = "…/"
 repo_root_style = "bright-green"
 
 [custom.vterm-emacs]
 command = '''printf '\e]%s\e\\' "51;A$(whoami)@$(hostname):$(pwd)"'''
 when = """test "$INSIDE_EMACS" = 'vterm' """
 format = "$output"
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+format = '[[$time](fg:#a0a9cb bg:#1d2230)]($style)'
+
+# Disabling things
+
+[kubernetes]
+disabled = true
+
+[vagrant]
+disabled = true

@@ -8,6 +8,8 @@
     ix = diff --cached
     ci = commit
     co = checkout
+    f = commit --amend --no-edit
+    if = instafix
 
     # ==== Repo properties
     root = rev-parse --show-toplevel
@@ -22,7 +24,8 @@
     # If the remote default branch is not named `main` sometimes I make my
     # local default branch be main, so check for main first
     sync = !"if (git rev-parse --verify main >/dev/null 2>&1) ; then export local=main ; else export local=$(git default-branch) ; fi ; export remote=$(git default-branch) ; export current=$(git branch --show-current); if [[ $current == $local ]] ; then git pull ; else git fetch origin ${remote}:${local} ; fi ; (git fetch origin &)"
-    cleanup = !"git rebase -i $(git merge-base @ $(git default-branch))"
+    cleanup = !"git rebase -i $(git merge-base @ origin/$(git default-branch))"
+    publish = !"git push -u origin $(git rev-parse --abbrev-ref HEAD)"
 
     # ==== Logging
     # Basic format for all log calls
@@ -39,6 +42,7 @@
     lgsa = lgs --branches=* --remotes=*
     # log with prs
     lgp = lg-base
+    lgps = lg-base -15
     lgpa = lgp --branches=* --remotes=*
 
     # highlight branches
@@ -62,10 +66,16 @@
 
 [core]
     editor = vim
-    pager = delta --dark '--theme=Dracula'
+    pager = delta
+    # speed up detection of changes
+    fsmonitor = true
+    # speed up untracked files
+    untrackedCache = true
+    # speed up log
+    commitgraph = true
 
 [interactive]
-    diffFilter = delta --color-only
+    diffFilter = delta --color-only --side-by-side
 
 [push]
     default = simple
@@ -75,15 +85,41 @@
 
 [fetch]
     prune = true
+    # double check that data is valid on fetch
+    # TODO: did these fsckobjects slow a bunch of things down dramatically?
+    # fsckobjects = true
+    # speed up history on fetched items
+    writeCommitGraph = true
+
+[transfer]
+    # double check that we don't push invalid objects
+    #fsckobjects = true
+[receive]
+    # double check that data is valid when pushed here
+    #fsckObjects = true
+
+[index]
+    # skipHash (turned on by manyfiles) causes git-absorb and git-instafix to
+    # break https://github.com/tummychow/git-absorb/issues/81
+    # https://github.com/libgit2/libgit2/issues/6531
+    skipHash = false
+
 [diff]
     algorithm = histogram
     colorMoved = zebra
     indentHeuristic = true
     submodule = log
 
+[merge]
+    conflictstyle = zdiff3
+
 [rebase]
     autosquash = true
     autoStash = true
+    updateRefs = true
+
+[rerere]
+    enabled = true
 
 [pull]
     rebase = true
@@ -91,26 +127,10 @@
 [color]
     ui = true
 
-; [color "diff"]
-;     meta = yellow bold
-;     commit = green bold
-;     frag = magenta bold
-;     old = red bold
-;     new = green bold
-;     whitespace = red reverse
-; [color "diff-highlight"]
-;     oldNormal = red bold
-;     oldHighlight = "red bold 52"
-;     newNormal = "green bold"
-;     newHighlight = "green bold 22"
-
 [color "status"]
     added = green
     changed = yellow
     untracked = red
-
-[merge]
-    conflictstyle = diff3
 
 [github]
     user = quodlibetor
@@ -121,21 +141,20 @@
 [remote "origin"]
     prune = true
 
-[remote "me"]
-    prune = true
-
-[rerere]
-    enabled = true
-
 [init]
     defaultBranch = main
 
 [delta]
-    side-by-side = false
+    side-by-side = true
     navigate = true
+    syntax-theme = Visual Studio Dark+
 
 [advice]
     detachedHead = false
+    skippedCherryPicks = false
 
 [status]
     submodulesummary = 1
+
+[safe]
+    directory = /home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/homebrew/homebrew-core

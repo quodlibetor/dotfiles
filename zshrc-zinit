@@ -1,37 +1,60 @@
 #!/usr/bin/env zsh
 
-# Lines configured by zsh-newuser-install
 typeset -U PATH
-export PATH="$HOME/.local/clang/bin:$HOME/.local/bin:$HOME/.cargo/bin:$HOME/go/bin:$PATH:/usr/local/bin:/usr/local/sbin:/opt/homebrew/opt/libpq/bin"
-for bindir in /opt/homebrew/opt/*/bin ; do
-    export PATH="$PATH:${bindir}"
-done
+export path=(
+    "$HOME/.local/clang/bin"
+    "$HOME/.local/bin"
+    "$HOME/.cargo/bin"
+    $path
+    /usr/local/bin
+    /usr/local/sbin
+    /opt/homebrew/bin
+    /opt/homebrew/sbin
+)
+# workaround for some things, I don't remember what so leave it disabled until something breaks
+# for bindir in /opt/homebrew/opt/*/bin ; do
+#     export PATH="$PATH:${bindir}"
+# done
+
+# mise works like asdf but doesn't use shims. it provides shims for ide
+# integration if necessary.
+MISE_SHIMDIR="$HOME"/.local/share/mise/shims
+if [[ -d "$MISE_SHIMDIR" ]]; then
+    path=($path "$MISE_SHIMDIR")
+fi
+# needs to be at the end because commandlinetools overwrites the llvm that cargo wants, I think
+CLT_BIN=/Library/Developer/CommandLineTools/usr/bin
+[[ -d $CLT_BIN ]] && export PATH="$PATH:$CLT_BIN"
+
+# go doesn't work on modern macos without this
+export CGO_CPPFLAGS="-Wno-error -Wno-nullability-completeness -Wno-expansion-to-defined"
+export GOPATH=$HOME/go
+export PATH=$PATH:$GOPATH/bin
+
 if [[ -n $JUST_WANT_PATH ]] ; then
     return
 fi
+
 HISTFILE=~/.histfile
 HISTSIZE=100000
 SAVEHIST=100000
 setopt extendedglob notify
 unsetopt nomatch
 bindkey -e
-# End of lines configured by zsh-newuser-install
-# The following lines were added by compinstall
+
+# COMPINSTALL
 zstyle :compinstall filename '/Users/bwm/.zshrc'
+
+if (( $+commands[brew] )) ; then
+    BREW_PREFIX=$(brew --prefix)
+    [ -d ${BREW_PREFIX}/share/zsh/site-functions ] && fpath+=(${BREW_PREFIX}/share/zsh/site-functions)
+fi
 
 fpath=($fpath $HOME/.local/zsh-completions $HOME/.zplugin/completions)
 autoload -Uz compinit
 autoload -U bashcompinit
 compinit
 # End of lines added by compinstall
-
-# I should probably figure out how to make this work the same as all the other compdefs
-#compdef _pastel pastel
-
-#export PATH="/Users/bwm/Library/Python/3.8/bin:/Users/bwm/Library/Python/3.7/bin:$PATH"
-# commandlinetools overwrites the llvm that cargo wants, I think
-export PATH="$PATH:/Library/Developer/CommandLineTools/usr/bin"
-export SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX11.3.sdk
 
 # Open current command line in vim
 autoload edit-command-line
@@ -71,9 +94,6 @@ zinit light-mode for \
 
 ### End of Zinit's installer chunk
 
-zinit as"null" wait"2" lucid from"gh-r" for \
-    mv"exa* -> exa" sbin       ogham/exa
-
 zinit light zdharma/fast-syntax-highlighting
 # TAB COMPLETIONS
 zinit ice wait"0b" lucid blockf
@@ -94,75 +114,69 @@ zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 zinit ice wait lucid atload'_zsh_autosuggest_start'
 zinit light zsh-users/zsh-autosuggestions
 
-# Install zoxide from the container registry, and then its plugin
-# Install it as j instead of z
-zinit ice wait"2" as"command" from"gh-r" lucid \
-  mv"zoxide*/zoxide -> zoxide" \
-  atclone"./zoxide init --cmd j zsh > init.zsh" \
-  atpull"%atclone" src"init.zsh" nocompile'!'
-zinit light ajeetdsouza/zoxide
-
 zinit ice wait lucid
 zinit snippet OMZ::lib/completion.zsh
 
 zinit ice as"completion"
 zinit snippet https://github.com/docker/cli/blob/master/contrib/completion/zsh/_docker
 
-zinit ice as"completion" lucid
-zinit ice pick'jwilm/alacritty/extra/completions/_alacritty'
-zinit ice svn wait'0' lucid
-zinit snippet PZT::modules/python
-zinit ice wait'0' atload'__zplg_async_run' lucid
-
 zinit ice wait lucid
 zinit load 'wfxr/forgit'
 
-# install the httpie-equivalent xh, aliased to 'http'
-zinit as"null" wait"2" lucid from"gh-r" for \
-    light-mode mv"xh*/xh -> xh" sbin"xh -> http" atinit"zinit creinstall -Q ducaale/xh" ducaale/xh
+# history
+setopt extended_history       # record timestamp of command in HISTFILE
+setopt hist_ignore_space      # ignore commands that start with space
+setopt hist_verify            # show command with history expansion to user before running it
+setopt share_history          # share command history data
+# duplicate detection
+setopt hist_expire_dups_first # delete duplicates first when HISTFILE size exceeds HISTSIZE
+setopt hist_ignore_all_dups   # Delete old recorded entry if new entry is a duplicate
 
-if [[ -f /usr/local/opt/asdf/libexec/asdf.sh ]]; then
-    source /usr/local/opt/asdf/libexec/asdf.sh
-fi
+######################################################################
+# Extra commands
 
-command -v starship >/dev/null && eval "$(starship init zsh)"
+(( $+commands[mise] )) && eval "$(mise activate zsh)"
+(( $+commands[zoxide] )) && eval "$(zoxide init --cmd j zsh)"
 
-alias -r ls=exa
-alias -r ll="ls -l"
-alias -r la="ls -la"
-alias -r grep="grep --color=auto"
-alias -r bg="batgrep"
-alias -r e="emacsclient --no-wait --socket-name=${HOME}/.emacs.d/server/server"
-setup_emacs_terminfo_kitty() {
-    # source https://www.gnu.org/software/emacs/manual/html_node/efaq/Colors-on-a-TTY.html
-    tic -x -o ~/.terminfo <( cat <<EOF
-    xterm-emacs|xterm with 24-bit direct color mode for Emacs,
-  use=xterm-256color,
-  setb24=\E[48\:2\:\:%p1%{65536}%/%d\:%p1%{256}%/%{255}%&\
-     %d\:%p1%{255}%&%dm,
-  setf24=\E[38\:2\:\:%p1%{65536}%/%d\:%p1%{256}%/%{255}%&\
-     %d\:%p1%{255}%&%dm,
-EOF
-)
-}
-et() {
-    if [[ -n "$KITTY_WINDOW_ID" ]]; then
-        TERM=xterm-emacs emacsclient --tty --socket-name=${HOME}/.emacs.d/server/server "$@"
-    else
-        emacsclient --tty --socket-name=${HOME}/.emacs.d/server/server "$@"
-    fi
-}
-alias -r rg="rg --smart-case"
+(( $+commands[starship] )) && eval "$(starship init zsh)"
+(( $+commands[eza] )) && alias -r ls=eza
+(( $+commands[fzf] )) && eval "$(fzf --zsh)"
+export FZF_DEFAULT_COMMAND='fd'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+
+alias -r aplay="ansible-playbook"
 alias -r dc="docker compose"
+alias -r dsa='docker stop $(docker ps -q)' # docker stop all
+alias -r e='emacsclient --no-wait --socket-name="${HOME}/.emacs.d/server/server"'
+alias -r et='emacsclient --tty --socket-name="${HOME}/.emacs.d/server/server"'
+alias -r grep="grep --color=auto"
+alias -r la="ls -la"
+alias -r ll="ls -l"
+alias -r lzd='lazydocker'
+alias -r lzg='lazygit'
+alias -r rg="rg --type-add 'tilt:*.tilt' --type-add 'tilt:Tiltfile'"
+alias -r tf=terraform
+alias -r vim=nvim
 
 export EDITOR=vim
+
+# Set the the built-in time format to be more like bash, with some goodies.
+export TIMEFMT='
+real	%E
+user	%U
+sys	%S
+%%cpu	%P
+maxmem	%M KB
+faults	%F'
+export TIME="$TIMEFMT"
+
+REPO_DIR="$HOME/repos"
 
 psgrep() {
     ps -eo 'pid ppid %cpu %mem etime args' | rg --color=always "(PID|$1)" | rg -v -w "rg"
 }
 
 # github clone
-REPO_DIR="$HOME/repos"
 ghc() {
     (
         cd "$REPO_DIR" || return 1
@@ -174,39 +188,6 @@ ghc() {
     echo
     echo "$REPO_DIR/${bn}" | tee >( echo -n "cd $(cat -)" | tr -d $'\n' | pbcopy)
 }
-
-#export RUSTC_WRAPPER=/Users/bwm/.cargo/bin/sccache
-
-export GOPATH=$HOME/go
-export GOROOT=/usr/local/opt/go/libexec
-export PATH=$PATH:$GOPATH/bin
-export PATH=$PATH:$GOROOT/bin
-
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-export FZF_DEFAULT_COMMAND='fd'
-export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-
-# history
-setopt extended_history       # record timestamp of command in HISTFILE
-setopt hist_ignore_space      # ignore commands that start with space
-setopt hist_verify            # show command with history expansion to user before running it
-setopt share_history          # share command history data
-# duplicate detection
-setopt hist_expire_dups_first # delete duplicates first when HISTFILE size exceeds HISTSIZE
-setopt hist_ignore_dups       # ignore duplicated commands history list
-setopt hist_ignore_all_dups   # Delete old recorded entry if new entry is a duplicate
-setopt hist_save_no_dups      # Don't write duplicate entries in the history file
-
-# see /Users/bwm/Library/Preferences/org.dystroy.broot/conf.toml for broot config
-[[ -f "$HOME/.local.sh" ]] && source "$HOME/.local.sh"
-
-alias -r lzd='lazydocker'
-alias -r lzg='lazygit'
-alias -r vim=nvim
-alias -r tf=terraform
-alias -r aplay="ansible-playbook"
-# docker stop all
-alias dsa='docker stop $(docker ps -q)'
 ssm() {
     local fields="${GOSSM_FIELDS:-name,launch-time,id}"
     gossm start --region us-east-2 --fields "$fields" "$@"
@@ -220,14 +201,14 @@ aws_token() {
     if [[ -n "$profile" ]]; then
         args=(--profile "${profile}")
     fi
-    eval $(\
+    eval "$(\
         aws sts \
             "${args[@]}" \
             get-session-token \
             --token-code "$token" \
             --serial-number "arn:aws:iam::934458803771:mfa/${username}" \
             | jq -r '.Credentials | "export AWS_ACCESS_KEY_ID=" + (.AccessKeyId) + "\nexport AWS_SECRET_ACCESS_KEY=" + (.SecretAccessKey) + "\nexport AWS_SESSION_TOKEN=" + (.SessionToken)'
-   )
+   )"
 }
 
 # list all mounted volumes
@@ -241,42 +222,6 @@ docker-mounts() {
            -f '{{ .Name }}{{ range .Mounts }}{{ printf "\n\t" }}{{ .Type }} {{ if eq .Type "bind" }}{{ .Source }}{{ end }}{{ .Name }} => {{ .Destination }}{{ end }}' \
            "${containers[@]}" \
            ;
-}
-
-# Set the the built-in time format to be more like bash, with some goodies.
-export TIMEFMT='
-real	%E
-user	%U
-sys	%S
-%%cpu	%P
-maxmem	%M KB
-faults	%F'
-export TIME="$TIMEFMT"
-
-ussh() {
-    ip="$1" && shift
-    ssh "$@" ubuntu@"$ip"
-}
-
-shortcut_issues() {
-    shortcut_user=bwm
-
-    mode=${1:-dev}
-    case $mode in
-        dev) state='In Development' ;;
-	todo) state='To-Do' ;;
-        ice) state='Icebox' ;;
-        done|completed) state='Completed' ;;
-	*)
-	    echo "invalid state: $mode expected one of ice|todo|dev|done"
-            return 1
-	    ;;
-    esac
-    short search --state "$state" \
-          --owner "$shortcut_user" --format "$shortcut_user/sc-%id/%t" -q \
-        | tr '[:upper:]' '[:lower:]' \
-        | sed -E -e 's,(/[^/]+/[^/]+)/.*$,\1,' -e 's/ $//' -e 's/ /-/g' \
-        | fzf --height 5
 }
 
 drun() {
@@ -301,8 +246,48 @@ Run a docker image with the current directory mounted in the working dir
     docker run -it --rm -v "$(pwd):/work" -w /work $image_name "${command[@]}"
 }
 
+dimgexec() {
+    local usage="usage: dexec IMAGE_NAME [COMMAND...]"
+    if [[ $# -eq 0  ]]; then
+        echo "$usage"
+        return 1
+    elif [[ "$*" =~ -h ]]; then
+        echo -n "$usage
+
+Execute into a running docker container
+"
+        return 0
+    fi
+
+    image_name=$1 && shift
+    if [[ $# -gt 0 ]]; then
+        command=("$@")
+    else
+        command=(bash)
+    fi
+
+    container_id=$(docker ps | awk "/$image_name/ "'{ print $1 }')
+    docker exec -it "$container_id" "${command[@]}"
+}
+
+function frg {
+    result=$(
+        rg --ignore-case --color=always --line-number --no-heading "$@" |
+            fzf --ansi \
+                --color 'hl:-1:underline,hl+:-1:underline:reverse' \
+                --delimiter ':' \
+                --preview "bat --color=always {1} --theme='Solarized (light)' --highlight-line {2}" \
+                --preview-window 'up,60%,border-bottom,+{2}+3/3,~3'
+    )
+    file=${result%%:*}
+    linenumber=$(echo "${result}" | cut -d: -f2)
+    if [[ -n "$file" ]]; then
+        $EDITOR +"${linenumber}" "$file"
+    fi
+}
+
 # Vterm stuff, tells emacs which directory we're currently in
-function vterm_printf() {
+vterm_printf() {
     if [ -n "$TMUX" ]; then
         # Tell tmux to pass the escape sequences through
         # (Source: http://permalink.gmane.org/gmane.comp.terminal-emulators.tmux.user/1324)
@@ -315,31 +300,16 @@ function vterm_printf() {
     fi
 }
 
-if [[ "$INSIDE_EMACS" = 'vterm' ]]; then
-    # alias clear='vterm_printf "51;Evterm-clear-scrollback";tput clear'
-    prompt_vterm_end() {
-        vterm_printf "51;A$(whoami)@$(hostname):$(pwd)";
-    }
-    POWERLEVEL9K_LEFT_PROMPT_ELEMENTS+=vterm_end
-fi
-
 if [[ -f /usr/local/bin/lesspipe.sh ]]; then
     export LESSOPEN='|/usr/local/bin/lesspipe.sh %s' LESS_ADVANCED_PREPROCESSOR=1
 elif [[ -f /opt/homebrew/bin/lesspipe.sh ]]; then
     export LESSOPEN="|/opt/homebrew/bin/lesspipe.sh %s" LESS_ADVANCED_PREPROCESSOR=1
 fi
 
-if [[ -d /opt/homebrew/opt/llvm ]]; then
-    export LDFLAGS="-L/opt/homebrew/opt/llvm/lib $LDFLAGS"
-    export CPPFLAGS="-I/opt/homebrew/opt/llvm/include $LDFLAGS"
-fi
+[[ -f $HOME/.wezterm.sh ]] && source "$HOME/.wezterm.sh"
 
-enable_nvm() {
-  export NVM_DIR="$HOME/.nvm"
-  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && . "/opt/homebrew/opt/nvm/nvm.sh"
-  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && . "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
-}
+#[ -f ~/.inshellisense/key-bindings.zsh ] && source ~/.inshellisense/key-bindings.zsh
+export GIT_INSTAFIX_UPSTREAM=main
 
-# no idea where this is getting set
-unset GOROOT
-source "${XDG_CONFIG_HOME:-$HOME/.config}/asdf-direnv/zshrc"
+# anything that should be set only on this computer
+[[ -f $HOME/.zshrc-local ]] && source "$HOME/.zshrc-local"

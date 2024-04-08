@@ -2,64 +2,94 @@
 
 set -euo pipefail
 
+runv() {
+    printf '>'
+    printf ' %q' "$@"
+    printf '\n'
+    "$@"
+}
+
 if ! which brew >/dev/null 2>&1; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
 
-brew install \
-    angle-grinder \
-    bat \
-    btop \
-    coreutils \
-    dust \
-    eza \
-    fd \
-    fzf \
-    git \
-    git-absorb \
-    git-delete-merged-branches \
-    git-delta \
-    jq \
-    lazygit \
-    lesspipe \
-    mise \
-    nvim \
-    quodlibetor/git-tools/git-instafix \
-    ripgrep \
-    shellcheck \
-    shfmt \
-    starship \
-    subversion \
-    tmux \
-    tokei \
-    zoxide \
-    zsh \
-    ;
+# install targets that provide a different binary than the name of the target are "install_target:file_to_check_for"
+needed_commands=(
+    angle-grinder:agrind
+    bat
+    btop
+    chezmoi
+    coreutils:gtr
+    dust
+    eza
+    fd
+    fzf
+    git
+    git-absorb
+    git-delete-merged-branches
+    git-delta:delta
+    jq
+    lazygit
+    lesspipe:lesspipe.sh
+    mise
+    nvim
+    quodlibetor/git-tools/git-instafix:git-instafix
+    ripgrep:rg
+    shellcheck
+    shfmt
+    starship
+    subversion:svn
+    tmux
+    tokei
+    zoxide
+    zsh
+)
+
+install_cmds=()
+for cmd in "${needed_commands[@]}"; do
+    check_cmd="$cmd"
+    install_cmd="$cmd"
+    if [[ "$cmd" = *:* ]]; then
+        install_cmd=$(echo "$cmd" | tr ':' '\n' | head -1)
+        check_cmd=$(echo "$cmd" | tr ':' '\n' | tail -1)
+    fi
+    if ! which "$check_cmd" >/dev/null 2>&1 ; then
+        install_cmds+=("$install_cmd")
+    fi
+done
+
+if [[ "${#install_cmds[@]}" -gt 0 ]]; then
+    runv brew install "${install_cmds[@]}"
+fi
 
 # to upgrade wezterm:
 # brew upgrade --cask wezterm-nightly --no-quarantine --greedy-latest
-brew tap homebrew/cask-versions # needed for wezterm
+runv brew tap homebrew/cask-versions # needed for wezterm
 
-brew install --cask \
+runv brew install --cask \
   rectangle \
   wezterm-nightly \
   ;
 
-mkdir -p ~/.tmux/plugins
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+if [[ ! -d $HOME/.tmux/plugins ]]; then
+    mkdir -p ~/.tmux/plugins
+    runv git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+fi
 
-# options are https://github.com/railwaycat/homebrew-emacsmacport/blob/master/Formula/emacs-mac.rb
-brew tap railwaycat/emacsmacport
-#--enable-mac-app \
-brew install emacs-mac --HEAD \
-    --with-dbus \
-    --with-imagemagick \
-    --with-librsvg \
-    --with-mac-metal \
-    --with-native-comp \
-    --with-no-title-bars \
-    --with-starter \
-    --with-xwidgets \
-    ;
+if ! which emacs >/dev/null 2>&1 ; then
+    # options are https://github.com/railwaycat/homebrew-emacsmacport/blob/master/Formula/emacs-mac.rb
+    runv brew tap railwaycat/emacsmacport
+    #--enable-mac-app \
+    runv brew install emacs-mac --HEAD \
+        --with-dbus \
+        --with-imagemagick \
+        --with-librsvg \
+        --with-mac-metal \
+        --with-native-comp \
+        --with-no-title-bars \
+        --with-starter \
+        --with-xwidgets \
+        ;
 
-osascript -e 'tell application "Finder" to make alias file to POSIX file "/opt/homebrew/opt/emacs-mac/Emacs.app" at POSIX file "/Applications"'
+    runv osascript -e 'tell application "Finder" to make alias file to POSIX file "/opt/homebrew/opt/emacs-mac/Emacs.app" at POSIX file "/Applications"'
+fi

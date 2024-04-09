@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+original_branch=$(git rev-parse --abbrev-ref HEAD)
+merge_base=$(git merge-base $original_branch origin/main)
+first_commit_after_merge_base=$(git log $merge_base..$original_branch --format="%H" | tail -1)
+
+# Find the branch that is furthest from the target branch
+last_branch_in_stack=""
+max_commit_count=0
+
+for branch in $(git branch --contains $first_commit_after_merge_base | tr -d '*' ); do
+    # Find the number of commits between the branch and the merge base with the target branch
+    merge_base=$(git merge-base $branch origin/main)
+    commit_count=$(git rev-list --count $merge_base..$branch)
+    if [[ $commit_count -gt $max_commit_count ]]; then
+        max_commit_count=$commit_count
+        last_branch_in_stack=$branch
+    fi
+done
+
+if [ -z "$last_branch_in_stack" ]; then
+    echo "No branches found in the stack."
+    exit 1
+fi
+
+git lgs "$last_branch_in_stack"

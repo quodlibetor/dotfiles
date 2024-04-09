@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: $0 <git-rebase args> <target-branch>"
+    exit 1
+fi
+
+if [[ "$*" =~ -h ]]; then
+    echo "Usage: $0 <git-rebase args> <target-branch>
+
+Rebase everything in the current stack on <target-branch>. 
+
+This simplifies the workflow of remembering which branch is the last in your PR
+stack to check it out, run git rebase --update-refs <target>, and then checkout
+your own branch again.
+
+If you have a collection of commits like:
+
+  *  44444  me/finish-ui    code review
+  *  33333                  finish the ui
+  *  22222  me/do-backend * respond to code review
+  *  11111                  write the backend
+
+And you are on commit 22222 and need to rebase on origin/main (which has
+diverged) you can do:
+
+  \$ $0 origin/main
+
+and $0 will update both me/do-backend and me/finish-ui, followed by checking
+out your current branch.
+"
+    exit
+fi
+
+BLU="\e[34m"
+RED="\e[31m"
+RST="\e[0m"
+PROG=$(basename $0)
+
+rebasestack() {
+    target_branch="${@: -1}"
+
+    original_branch=$(git rev-parse --abbrev-ref HEAD)
+    merge_base=$(git merge-base $original_branch $target_branch)
+    first_commit_after_merge_base=$(git log $merge_base..$original_branch --format="%H" | tail -1)
+
+    ensure_working_tree_clean
+    ensure_target_branch_exists "$target_branch"
+    ensure_no_divergent_branches_in_stack "$first_commit_after_merge_base"
+
+    last_branch_in_stack=$(find_last_commit_in_stack "$first_commit_after_merge_base" "$target_branch")
+
+    if [ -z "$last_branch_in_stack" ]; then
+        echo "No branches found in the stack."
+        exit 1
+    fi
+
+    # Rebase the last branch in the stack
+    runv git checkout "$last_branch_in_stack"
+    runv git rebase --update-refs "$@"
+
+    # Return to the original branch
+    runv git checkout "$original_branch"
+}
+
+ensure_working_tree_clean() {
+    if ! git diff-index --quiet HEAD -- ; then
+        echo "You have uncommited changes."
+	echo "Please commit or stash them before running ${PROG}."
+	exit 1
+    fi
+}
+
+ensure_target_branch_exists() {
+    target_branch="$1"
+    if ! git rev-parse --verify --quiet "$target_branch" >/dev/null; then
+        echo "Error: Target branch '$target_branch' does not exist."
+        echo "Target branch must be the last argument."
+        exit 1
+    fi
+}
+ensure_no_divergent_branches_in_stack() {
+    first_commit_after_merge_base="$1"
+    while read line ; do
+    	wordcount=$(wc -w <<<"$line")
+    	if [[ $wordcount -gt 2 ]]; then
+	    parent=$( echo "$line" | awk '{ print $1 }')
+	    printf "${RED}ERROR${RST}:($PROG): commit ${parent} contains two children (diverged branches)\n"
+	    echo
+	    git log --graph $first_commit_after_merge_base.. $(git branch --contains $first_commit_after_merge_base | tr -d '*') --
+	    echo ""
+	    printf "${BLU}HINT${RST}($PROG): Ensure that you have linear history before continuing to use $PROG\n"
+	    echo
+	    exit 1
+	fi
+    done < <(git rev-list --children $first_commit_after_merge_base.. $(git branch --contains $first_commit_after_merge_base | tr -d '*') )
+}
+
+find_last_commit_in_stack() {
+    first_commit_after_merge_base="$1" && shift
+    target_branch="$1" && shift
+
+    last_branch_in_stack=""
+    max_commit_count=0
+
+    for branch in $(git branch --contains $first_commit_after_merge_base | tr -d '*'); do
+        if [[ "$branch" = "$target_branch" ]]; then
+            continue
+        fi
+
+        # Find the number of commits between the branch and the merge base with the target branch
+        merge_base=$(git merge-base $branch $target_branch)
+        commit_count=$(git rev-list --count $merge_base..$branch)
+
+        if [[ $commit_count -gt $max_commit_count ]]; then
+            max_commit_count=$commit_count
+            last_branch_in_stack=$branch
+        fi
+    done
+    printf "%s" "$last_branch_in_stack"
+}
+
+runv() {
+    printf '>'
+    printf ' %q' "$@"
+    printf '\n'
+    "$@"
+}
+
+rebasestack "$@"

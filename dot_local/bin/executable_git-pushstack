@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+pushstack() {
+    current_branch=$(git rev-parse --abbrev-ref HEAD)
+    merge_base=$(git merge-base origin/main $current_branch)
+    first_commit_after_merge_base=$(git log $merge_base..$current_branch --format="%H" | tail -1)
+
+    branches=($(stack_branches_in_topo_order $first_commit_after_merge_base))
+
+    echo "Found branches:"
+    for branch in "${branches[@]}"; do
+        echo "    $branch"
+    done
+    echo -n "Force push all? [y/N/(s)ome] "
+    read -r -n 1 reply
+    [[ $reply != "" ]] && echo # print a newline if the user didn't hit return
+
+    if [[ $reply =~ ^[Yy]$ ]]; then
+        for branch in "${branches[@]}"; do
+            git push --force-with-lease origin $branch
+        done
+    elif [[ $reply =~ ^[Ss]$ ]]; then
+        for branch in "${branches[@]}"; do
+            echo -n "Force push $branch? [y/N] "
+            read -r -n 1 reply
+            [[ $reply != "" ]] && echo
+            if [[ $reply =~ ^[Yy]$ ]]; then
+                git push --force-with-lease origin $branch
+            fi
+        done
+    fi
+}
+
+stack_branches_in_topo_order() {
+    first_commit_after_merge_base=$1
+    branches=()
+    while IFS= read -r line; do
+        branches+=("$line")
+    done < <(git branch --contains $first_commit_after_merge_base | tr -d ' *')
+
+    # Sort branches based on their distance from the first_commit_after_merge_base
+    sorted_branches=()
+    for branch in "${branches[@]}"; do
+        count=$(commits_since_merge_base "$branch" "$first_commit_after_merge_base")
+        sorted_branches+=("$count $branch")
+    done
+
+    IFS=$'\n' sorted_branches=($(sort -n <<<"${sorted_branches[*]}"))
+
+    # Extract only branch names
+    echo "${sorted_branches[@]##* }"
+}
+
+commits_since_merge_base() {
+    git rev-list --count $(git merge-base $2 $1)..$1
+}
+
+pushstack "$@"

@@ -20,7 +20,7 @@ export path=(
 # integration if necessary.
 MISE_SHIMDIR="$HOME"/.local/share/mise/shims
 if [[ -d "$MISE_SHIMDIR" ]]; then
-    path=($path "$MISE_SHIMDIR")
+    path+=("$MISE_SHIMDIR")
 fi
 # needs to be at the end because commandlinetools overwrites the llvm that cargo wants, I think
 CLT_BIN=/Library/Developer/CommandLineTools/usr/bin
@@ -143,14 +143,19 @@ setopt hist_ignore_all_dups   # Delete old recorded entry if new entry is a dupl
 # Extra commands
 
 (( $+commands[mise] )) && eval "$(mise activate zsh)"
-(( $+commands[zoxide] )) && eval "$(zoxide init --cmd j zsh)"
 (( $+commands[starship] )) && eval "$(starship init zsh)"
-(( $+commands[eza] )) && alias -r ls=eza
-(( $+commands[fzf] )) && eval "$(fzf --zsh)"
-export FZF_DEFAULT_COMMAND='fd'
-export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+(( $+commands[zoxide] )) && eval "$(zoxide init --cmd j zsh)"
 
+if (( $+commands[fzf] )) ; then
+    eval "$(fzf --zsh)"
+    export FZF_DEFAULT_COMMAND='fd'
+    export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+fi
+
+(( $+commands[eza] )) && alias -r ls=eza
+(( $+commands[nvim] )) && alias -r vim=nvim
 alias -r aplay="ansible-playbook"
+alias -r cm=chezmoi
 alias -r dc="docker compose"
 alias -r dsa='docker stop $(docker ps -q)' # docker stop all
 alias -r e='emacsclient --no-wait --socket-name="${HOME}/.emacs.d/server/server"'
@@ -162,7 +167,6 @@ alias -r lzd='lazydocker'
 alias -r lzg='lazygit'
 alias -r rg="rg --type-add 'tilt:*.tilt' --type-add 'tilt:Tiltfile'"
 alias -r tf=terraform
-alias -r vim=nvim
 
 export EDITOR=vim
 
@@ -175,6 +179,8 @@ sys	%S
 maxmem	%M KB
 faults	%F'
 export TIME="$TIMEFMT"
+
+[[ -f $HOME/.wezterm.sh && $TERM == wezterm ]] && source "$HOME/.wezterm.sh"
 
 REPO_DIR="$HOME/repos"
 
@@ -311,8 +317,6 @@ if [[ -f /usr/local/bin/lesspipe.sh ]]; then
 elif [[ -f /opt/homebrew/bin/lesspipe.sh ]]; then
     export LESSOPEN="|/opt/homebrew/bin/lesspipe.sh %s" LESS_ADVANCED_PREPROCESSOR=1
 fi
-
-[[ -f $HOME/.wezterm.sh ]] && source "$HOME/.wezterm.sh"
 
 #[ -f ~/.inshellisense/key-bindings.zsh ] && source ~/.inshellisense/key-bindings.zsh
 export GIT_INSTAFIX_UPSTREAM=main

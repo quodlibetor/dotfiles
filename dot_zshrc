@@ -34,7 +34,7 @@ export PATH=$PATH:$GOPATH/bin
 if [[ -d $HOME/.local/share/man ]] ; then
     MANPATH="$HOME/.local/share/man:$MANPATH"
 fi
-if which fwd-browse >/dev/null && [[ ! ($HOST =~ .*\.local) && -z $BROWSER ]]; then
+if (( $+commands[fwd-browse] )) && [[ ! ($HOST =~ .*\.local) && -z $BROWSER ]]; then
     BROWSER=fwd-browse
 fi
 
@@ -319,6 +319,3 @@ export GIT_INSTAFIX_UPSTREAM=main
 
 # anything that should be set only on this computer
 [[ -f $HOME/.zshrc-local ]] && source "$HOME/.zshrc-local"
-
-[[ -f $HOME/.wezterm.sh ]] && source $HOME/.wezterm.sh
-export RIPGREP_CONFIG_PATH=$HOME/.config/ripgreprc

@@ -17,6 +17,10 @@ case $(uname -s) in
     *) OS=unknown ;;
 esac
 
+if [[ $OS == linux && $(ulimit -Sn) -lt 8192 ]]; then
+    ulimit -n 8192
+fi
+
 brewcmd=""
 if which brew >/dev/null 2>&1; then
     brewcmd="$(which brew)"
@@ -81,7 +85,9 @@ for cmd in "${needed_commands[@]}"; do
 done
 
 if [[ "${#install_cmds[@]}" -gt 0 ]]; then
-    runv "$brewcmd" install "${install_cmds[@]}"
+    # brew will sometimes fail to clean up on linux because of too many open files,
+    # it's still installed everything, so continue anyway
+    runv "$brewcmd" install "${install_cmds[@]}" || true
 fi
 
 if [[ $OS == darwin ]]; then

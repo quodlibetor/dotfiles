@@ -1,3 +1,6 @@
+# personal things
+/scratch
+/.tool-versions
 # git
 .subgit
 .svn

@@ -1,16 +1,31 @@
 #!/usr/bin/env bash
 
+for arg in "$@"; do
+    case $arg in
+        -h | --help)
+            echo -n "usage: $0 [-h|--help] [repo-filter]
+
+Search for and either open or clone a repo in either lacework or lacework-dev.
+"
+            exit
+            ;;
+    esac
+done
+
 repos-in-org() {
-	local org="$1" && shift
-	GH_FORCE_TTY=100% \
-		gh repo list --template "{{- range . -}}
+    local org="$1" && shift
+    GH_FORCE_TTY=100% \
+        gh repo list "$org" \
+        --limit 1500 \
+        --json name \
+        --template "{{- range . -}}
 ${org}/{{ .name }}
-{{ end -}}" --json owner,name "$org"
+{{ end -}}"
 }
 
-cat <(repos-in-org lacework) <(repos-in-org lacework-dev) |
-	fzf --ansi --no-multi \
-		--header 'RET: clone selected | Ctrl-o open in web browser' \
-		--bind 'return:accept+execute(echo "> gh repo clone {1}" && gh repo clone {1})' \
-		--bind 'ctrl-o:accept+execute(bash -c "url=https://github.com/{1} ; open  \"\$url\" || xdg-open \"\$url\" ")' \
-	;
+cat <(repos-in-org lacework) <(repos-in-org lacework-dev) \
+    | fzf --ansi --no-multi --query "$1" \
+        --header 'RET: clone selected | Ctrl-o open in web browser' \
+        --bind 'return:accept+execute(echo "> gh repo clone {1}" && gh repo clone {1})' \
+        --bind 'ctrl-o:accept+execute(bash -c "url=https://github.com/{1} ; open  \"\$url\" || xdg-open \"\$url\" ")' \
+    ;

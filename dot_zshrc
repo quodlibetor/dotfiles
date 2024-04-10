@@ -5,10 +5,10 @@ export path=(
     "$HOME/.local/clang/bin"
     "$HOME/.local/bin"
     "$HOME/.cargo/bin"
+    /opt/homebrew/bin
     $path
     /usr/local/bin
     /usr/local/sbin
-    /opt/homebrew/bin
     /opt/homebrew/sbin
 )
 # workaround for some things, I don't remember what so leave it disabled until something breaks
@@ -32,10 +32,10 @@ export GOPATH=$HOME/go
 export PATH=$PATH:$GOPATH/bin
 
 if [[ -d $HOME/.local/share/man ]] ; then
-    MANPATH="$HOME/.local/share/man:$MANPATH"
+    export MANPATH="$HOME/.local/share/man:$MANPATH"
 fi
 if (( $+commands[fwd-browse] )) && [[ ! ($HOST =~ .*\.local) && -z $BROWSER ]]; then
-    BROWSER=fwd-browse
+    export BROWSER=fwd-browse
 fi
 
 if [[ -n $JUST_WANT_PATH ]] ; then
@@ -154,7 +154,12 @@ if (( $+commands[fzf] )) ; then
 fi
 
 (( $+commands[eza] )) && alias -r ls=eza
-(( $+commands[nvim] )) && alias -r vim=nvim
+if (( $+commands[nvim] )); then
+    alias -r vim=nvim
+    export EDITOR=nvim
+else
+    export EDITOR=vim
+fi
 alias -r aplay="ansible-playbook"
 alias -r cm=chezmoi
 alias -r dc="docker compose"
@@ -168,8 +173,6 @@ alias -r lzd='lazydocker'
 alias -r lzg='lazygit'
 alias -r rg="rg --type-add 'tilt:*.tilt' --type-add 'tilt:Tiltfile'"
 alias -r tf=terraform
-
-export EDITOR=vim
 
 # Set the the built-in time format to be more like bash, with some goodies.
 export TIMEFMT='

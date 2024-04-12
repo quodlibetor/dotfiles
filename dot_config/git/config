@@ -143,6 +143,7 @@
 
 [init]
     defaultBranch = main
+    templateDir = ~/.config/git/hook-templates
 
 [delta]
     side-by-side = true

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+USER_EMAIL=$(git config user.email)
+
+if [ -z "$USER_EMAIL" ]; then
+  echo "Error: No email address configured for this repository."
+  echo "Please configure a local email address with:"
+  echo "git config user.email 'your-email@example.com'"
+  exit 1
+fi
+

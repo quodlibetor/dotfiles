@@ -129,7 +129,7 @@ elif [[ $OS == linux ]]; then
     curl -fL https://github.com/wez/wezterm/releases/download/nightly/wezterm-nightly.Ubuntu22.04.deb -o /tmp/wezterm-nightly.deb || true
 
     [[ -f /tmp/wezterm-nightly.deb ]] && install+=(/tmp/wezterm-nightly.deb)
-    [[ -f "$HOME/emacs-desired-runtime-deps.list" ]] && install+=(cat "$HOME/emacs-desired-runtime-deps.list")
+    [[ -f "$HOME/emacs-desired-runtime-deps.list" ]] && install+=($(cat "$HOME/emacs-desired-runtime-deps.list"))
 
     export DEBIAN_FRONTEND=noninteractive
     sudo apt-get update

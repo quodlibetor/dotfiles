@@ -131,7 +131,6 @@ elif [[ $OS == linux ]]; then
     [[ -f /tmp/wezterm-nightly.deb ]] && install+=(/tmp/wezterm-nightly.deb)
     [[ -f "$HOME/emacs-desired-runtime-deps.list" ]] && install+=($(cat "$HOME/emacs-desired-runtime-deps.list"))
 
-    export DEBIAN_FRONTEND=noninteractive
-    sudo apt-get update
-    sudo apt install -y "${install[@]}"
+    sudo env DEBIAN_FRONTEND=noninteractive apt-get update
+    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${install[@]}"
 fi

@@ -34,7 +34,7 @@ export PATH=$PATH:$GOPATH/bin
 if [[ -d $HOME/.local/share/man ]] ; then
     export MANPATH="$HOME/.local/share/man:$MANPATH"
 fi
-if (( $+commands[fwd-browse] )) && [[ ! ($HOST =~ .*\.local) && -z $BROWSER ]]; then
+if (( $+commands[fwd-browse] )) && [[ $(uname -s) != Darwin && -z $BROWSER ]]; then
     export BROWSER=fwd-browse
 fi
 

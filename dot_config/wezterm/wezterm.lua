@@ -33,7 +33,6 @@ wezterm.on('format-tab-title', function(tab, tabs, panes, config, hover, max_wid
 end)
 
 wezterm.on('user-var-changed', function(window, pane, name, value)
-  wezterm.log_info('var', name, value)
   if name == 'OPEN_URL' then
      wezterm.open_with(value)
   end

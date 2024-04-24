@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+
+# Check for argument presence
+if [[ $# -eq 0 ]]; then
+  echo "Usage: $0 <file_or_url>"
+  exit 1
+fi
+
+FILE=$1
+
+printf '\033]1337;SetUserVar=OPEN_URL=%s\007' "$(echo -n "$FILE" | base64)"

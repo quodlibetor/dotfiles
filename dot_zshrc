@@ -34,12 +34,15 @@ export PATH=$PATH:$GOPATH/bin
 if [[ -d $HOME/.local/share/man ]] ; then
     export MANPATH="$HOME/.local/share/man:$MANPATH"
 fi
-if (( $+commands[fwd-browse] )) && [[ $(uname -s) != Darwin && -z $BROWSER ]]; then
-    export BROWSER=fwd-browse
-fi
 
 if [[ -n $JUST_WANT_PATH ]] ; then
     return
+fi
+
+if (( $+commands[wezterm] )) && (( $+commands[weztermopen] )) ; then
+    export BROWSER=weztermopen
+elif (( $+commands[fwd-browse] )) && [[ $(uname -s) != Darwin && -z $BROWSER ]]; then
+    export BROWSER=fwd-browse
 fi
 
 HISTFILE=~/.histfile

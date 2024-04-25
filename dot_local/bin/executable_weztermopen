@@ -1,11 +1,30 @@
 #!/usr/bin/env zsh
 
-# Check for argument presence
-if [[ $# -eq 0 ]]; then
-  echo "Usage: $0 <file_or_url>"
-  exit 1
+# wezterm.lua has an if block for OPEN_URL in the user-var-changed handler
+WEZ_CONFIG_CALLBACK=OPEN_URL
+
+for arg in "$@"; do
+    if [[ $arg == -h || $arg == --help ]]; then
+        echo "Usage: $0 <url>"
+        exit 0
+    fi
+done
+if [[ $# != 1 ]]; then
+    echo "Usage: $0 <url>"
+    exit 1
 fi
 
-FILE=$1
+URL=$1
+if [[ $URL != http* ]]; then
+    URL=http://$URL
+fi
 
-printf '\033]1337;SetUserVar=OPEN_URL=%s\007' "$(echo -n "$FILE" | base64)"
+encoded=$(echo -n "$URL" | base64)
+# call the same thing, but if stdout is not tty put it in a new tab
+# the sleep 0.1 is to give wezterm time to read the results of printf
+cmd=(bash -c "printf '\\033]1337;SetUserVar=%s=%s\\007' \"$WEZ_CONFIG_CALLBACK\" \"$encoded\"; sleep 0.1")
+if [[ -t 1 ]]; then
+    "${cmd[@]}"
+else
+    wezterm cli spawn -- "${cmd[@]}"
+fi

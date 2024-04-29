@@ -1,16 +1,25 @@
 #!/usr/bin/env zsh
 
 typeset -U PATH
-export path=(
+extra_path=(
     "$HOME/.local/clang/bin"
     "$HOME/.local/bin"
     "$HOME/.cargo/bin"
-    /opt/homebrew/bin
+)
+for pth in /opt/homebrew/bin /home/linuxbrew/.linuxbrew/bin; do
+  if [[ -d $pth ]]; then
+    extra_path+=$pth
+    break
+  fi
+done
+export path=(
+    "${extra_path[@]}"
     $path
     /usr/local/bin
     /usr/local/sbin
     /opt/homebrew/sbin
 )
+unset extra_path pth
 # workaround for some things, I don't remember what so leave it disabled until something breaks
 # for bindir in /opt/homebrew/opt/*/bin ; do
 #     export PATH="$PATH:${bindir}"

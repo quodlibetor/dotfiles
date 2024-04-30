@@ -36,7 +36,9 @@ CLT_BIN=/Library/Developer/CommandLineTools/usr/bin
 [[ -d $CLT_BIN ]] && export PATH="$PATH:$CLT_BIN"
 
 # go doesn't work on modern macos without this
-export CGO_CPPFLAGS="-Wno-error -Wno-nullability-completeness -Wno-expansion-to-defined"
+if [[ $(uname -s) == Darwin ]]; then
+    export CGO_CPPFLAGS="-Wno-error -Wno-nullability-completeness -Wno-expansion-to-defined"
+fi
 export GOPATH=$HOME/go
 export PATH=$PATH:$GOPATH/bin
 
@@ -48,7 +50,7 @@ if [[ -n $JUST_WANT_PATH ]] ; then
     return
 fi
 
-if (( $+commands[wezterm] )) && (( $+commands[weztermopen] )) ; then
+if [[ $TERM == wezterm && -z $BROWSER ]] && (( $+commands[wezterm] )) && (( $+commands[weztermopen] )) ; then
     export BROWSER=weztermopen
 elif (( $+commands[fwd-browse] )) && [[ $(uname -s) != Darwin && -z $BROWSER ]]; then
     export BROWSER=fwd-browse

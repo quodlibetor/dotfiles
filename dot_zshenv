@@ -1,0 +1,55 @@
+#!/usr/bin/env
+
+# Env vars that should be set for both interactive and noninteractive sessions
+
+typeset -U PATH
+extra_path=(
+    "$HOME/.local/clang/bin"
+    "$HOME/.local/bin"
+    "$HOME/.cargo/bin"
+)
+for pth in /opt/homebrew/bin /home/linuxbrew/.linuxbrew/bin; do
+  if [[ -d $pth ]]; then
+    extra_path+=$pth
+    break
+  fi
+done
+export path=(
+    "${extra_path[@]}"
+    $path
+    /usr/local/bin
+    /usr/local/sbin
+    /opt/homebrew/sbin
+)
+unset extra_path pth
+# workaround for some things, I don't remember what so leave it disabled until something breaks
+# for bindir in /opt/homebrew/opt/*/bin ; do
+#     export PATH="$PATH:${bindir}"
+# done
+
+# mise works like asdf but doesn't use shims. it provides shims for ide
+# integration if necessary.
+MISE_SHIMDIR="$HOME"/.local/share/mise/shims
+if [[ -d "$MISE_SHIMDIR" ]]; then
+    path+=("$MISE_SHIMDIR")
+fi
+# needs to be at the end because commandlinetools overwrites the llvm that cargo wants, I think
+CLT_BIN=/Library/Developer/CommandLineTools/usr/bin
+[[ -d $CLT_BIN ]] && export PATH="$PATH:$CLT_BIN"
+
+# go doesn't work on modern macos without this
+if [[ $(uname -s) == Darwin ]]; then
+    export CGO_CPPFLAGS="-Wno-error -Wno-nullability-completeness -Wno-expansion-to-defined"
+fi
+export GOPATH=$HOME/go
+export PATH=$PATH:$GOPATH/bin
+
+if [[ -d $HOME/.local/share/man ]] ; then
+    export MANPATH="$HOME/.local/share/man:$MANPATH"
+fi
+
+if [[ $TERM == wezterm && -z $BROWSER ]] && (( $+commands[wezterm] )) && (( $+commands[weztermopen] )) ; then
+    export BROWSER=weztermopen
+elif (( $+commands[fwd-browse] )) && [[ $(uname -s) != Darwin && -z $BROWSER ]]; then
+    export BROWSER=fwd-browse
+fi

@@ -21,11 +21,9 @@ if ! chezmoi="$(command -v chezmoi)"; then
     fi
     sh -c "${chezmoi_install_script}" -- -b "${bin_dir}"
     unset chezmoi_install_script bin_dir
-
 fi
 
-set -- init --apply --no-tty --source="${script_dir}"
+set -- init --apply --no-tty --no-pager --keep-going --source="${script_dir}"
 
 echo "Running 'chezmoi $*'" >&2
-# exec: replace current process with chezmoi
-exec "$chezmoi" "$@"
+"$chezmoi" "$@" || true

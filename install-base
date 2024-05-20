@@ -85,6 +85,10 @@ for cmd in "${needed_commands[@]}"; do
 done
 
 if [[ "${#install_cmds[@]}" -gt 0 ]]; then
+    if [[ $(whoami) == coder ]]; then
+        # coder devspaces get deleted every night and cleanup can take a long time
+        export HOMEBREW_NO_INSTALL_CLEANUP=TRUE
+    fi
     # brew will sometimes fail to clean up on linux because of too many open files,
     # it's still installed everything, so continue anyway
     runv "$brewcmd" install "${install_cmds[@]}" || true

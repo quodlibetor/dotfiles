@@ -21,6 +21,64 @@ if [[ $OS == linux && $(ulimit -Sn) -lt 8192 ]]; then
     ulimit -n 8192
 fi
 
+#
+# Install system packages
+#
+
+APT_LOG_FILE=$(mktemp chezmoi-apt-log.XXXXXXXXXX)
+
+if [[ $OS == darwin ]]; then
+    # to upgrade wezterm:
+    # brew upgrade --cask wezterm-nightly --no-quarantine --greedy-latest
+    runv "$brewcmd" tap homebrew/cask-versions # needed for wezterm
+
+    runv "$brewcmd" install --cask \
+        rectangle \
+        wezterm-nightly \
+        ;
+
+    if [[ ! -d $HOME/.tmux/plugins ]]; then
+        mkdir -p ~/.tmux/plugins
+        runv git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+    fi
+
+    if ! which emacs >/dev/null 2>&1; then
+        # options are https://github.com/railwaycat/homebrew-emacsmacport/blob/master/Formula/emacs-mac.rb
+        runv brew tap railwaycat/emacsmacport
+        #--enable-mac-app \
+        runv brew install emacs-mac --HEAD \
+            --with-dbus \
+            --with-imagemagick \
+            --with-librsvg \
+            --with-mac-metal \
+            --with-native-comp \
+            --with-no-title-bars \
+            --with-starter \
+            --with-xwidgets \
+            ;
+
+        runv osascript -e 'tell application "Finder" to make alias file to POSIX file "/opt/homebrew/opt/emacs-mac/Emacs.app" at POSIX file "/Applications"'
+    fi
+elif [[ $OS == linux ]]; then
+    echo "Installing apt packages"
+
+    install=()
+
+    curl -fL https://github.com/wez/wezterm/releases/download/nightly/wezterm-nightly.Ubuntu22.04.deb -o /tmp/wezterm-nightly.deb || true
+
+    [[ -f /tmp/wezterm-nightly.deb ]] && install+=(/tmp/wezterm-nightly.deb)
+    [[ -f "$HOME/emacs-desired-runtime-deps.list" ]] && install+=($(cat "$HOME/emacs-desired-runtime-deps.list"))
+
+    echo "Installing apt packages: $(date)" >$APT_LOG_FILE
+
+    sudo env DEBIAN_FRONTEND=noninteractive apt-get update
+    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${install[@]}" >>$APT_LOG_FILE 2>&1 &
+fi
+
+#
+# Install brew supplied things
+#
+
 brewcmd=""
 if which brew >/dev/null 2>&1; then
     brewcmd="$(which brew)"
@@ -94,47 +152,9 @@ if [[ "${#install_cmds[@]}" -gt 0 ]]; then
     runv "$brewcmd" install "${install_cmds[@]}" || true
 fi
 
-if [[ $OS == darwin ]]; then
-    # to upgrade wezterm:
-    # brew upgrade --cask wezterm-nightly --no-quarantine --greedy-latest
-    runv "$brewcmd" tap homebrew/cask-versions # needed for wezterm
+wait
 
-    runv "$brewcmd" install --cask \
-        rectangle \
-        wezterm-nightly \
-        ;
-
-    if [[ ! -d $HOME/.tmux/plugins ]]; then
-        mkdir -p ~/.tmux/plugins
-        runv git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-    fi
-
-    if ! which emacs >/dev/null 2>&1; then
-        # options are https://github.com/railwaycat/homebrew-emacsmacport/blob/master/Formula/emacs-mac.rb
-        runv brew tap railwaycat/emacsmacport
-        #--enable-mac-app \
-        runv brew install emacs-mac --HEAD \
-            --with-dbus \
-            --with-imagemagick \
-            --with-librsvg \
-            --with-mac-metal \
-            --with-native-comp \
-            --with-no-title-bars \
-            --with-starter \
-            --with-xwidgets \
-            ;
-
-        runv osascript -e 'tell application "Finder" to make alias file to POSIX file "/opt/homebrew/opt/emacs-mac/Emacs.app" at POSIX file "/Applications"'
-    fi
-elif [[ $OS == linux ]]; then
-
-    install=()
-
-    curl -fL https://github.com/wez/wezterm/releases/download/nightly/wezterm-nightly.Ubuntu22.04.deb -o /tmp/wezterm-nightly.deb || true
-
-    [[ -f /tmp/wezterm-nightly.deb ]] && install+=(/tmp/wezterm-nightly.deb)
-    [[ -f "$HOME/emacs-desired-runtime-deps.list" ]] && install+=($(cat "$HOME/emacs-desired-runtime-deps.list"))
-
-    sudo env DEBIAN_FRONTEND=noninteractive apt-get update
-    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${install[@]}"
+if [[ -f $APT_LOG_FILE ]]; then
+    cat $APT_LOG_FILE
+    rm $APT_LOG_FILE
 fi

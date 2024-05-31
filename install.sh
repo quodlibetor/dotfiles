@@ -27,3 +27,7 @@ set -- init --apply --no-tty --no-pager --keep-going --source="${script_dir}"
 
 echo "Running 'chezmoi $*'" >&2
 "$chezmoi" "$@" || true
+
+if [[ -e $HOME/init.sh ]]; then
+    "$HOME/init.sh"
+fi

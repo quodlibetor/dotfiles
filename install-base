@@ -60,7 +60,7 @@ if [[ $OS == darwin ]]; then
         runv osascript -e 'tell application "Finder" to make alias file to POSIX file "/opt/homebrew/opt/emacs-mac/Emacs.app" at POSIX file "/Applications"'
     fi
 elif [[ $OS == linux ]]; then
-    echo "Installing apt packages"
+    echo "INSTALL: apt packages"
 
     install=()
 
@@ -69,7 +69,7 @@ elif [[ $OS == linux ]]; then
     [[ -f /tmp/wezterm-nightly.deb ]] && install+=(/tmp/wezterm-nightly.deb)
     [[ -f "$HOME/emacs-desired-runtime-deps.list" ]] && install+=($(cat "$HOME/emacs-desired-runtime-deps.list"))
 
-    echo "Installing apt packages: $(date)" >$APT_LOG_FILE
+    echo "INSTALL: apt install log: $(date)" >$APT_LOG_FILE
 
     sudo env DEBIAN_FRONTEND=noninteractive apt-get update
     sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${install[@]}" >>$APT_LOG_FILE 2>&1 &
@@ -152,9 +152,14 @@ if [[ "${#install_cmds[@]}" -gt 0 ]]; then
     runv "$brewcmd" install "${install_cmds[@]}" || true
 fi
 
+echo "INSTALL: finished brew install"
+
 wait
 
 if [[ -f $APT_LOG_FILE ]]; then
+    echo
     cat $APT_LOG_FILE
     rm $APT_LOG_FILE
+else
+    echo "INSTALL: no apt logs"
 fi

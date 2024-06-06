@@ -1,6 +1,7 @@
 # personal things
 /scratch
 /.tool-versions
+/.mise.toml
 # git
 .subgit
 .svn

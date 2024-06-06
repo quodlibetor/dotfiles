@@ -6,7 +6,35 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
   vim.fn.system({ "git", "clone", "--filter=blob:none", "https://github.com/folke/lazy.nvim.git", "--branch=stable",
     lazypath })
 end
+
 vim.opt.rtp:prepend(vim.env.LAZY or lazypath)
+
+local wez_bin = os.getenv("WEZTERM_EXECUTABLE")
+
+if
+  vim.version().minor >= 10
+  and wez_bin
+  and string.find(wez_bin, "server") -- means we are a server that a client is talking to
+then
+  local function no_paste(_)
+    return function(_)
+      -- Do nothing! We can't paste with OSC52
+    end
+  end
+  -- not working
+  vim.g.clipboard = {
+    name = "OSC 52",
+    copy = {
+      ["+"] = require("vim.ui.clipboard.osc52").copy,
+      ["*"] = require("vim.ui.clipboard.osc52").copy,
+    },
+    -- https://github.com/neovim/neovim/issues/28611
+    paste = {
+      ["+"] = no_paste("+"),
+      ["*"] = no_paste("*"),
+    },
+  }
+end
 
 require("lazy").setup({
   spec = {

@@ -118,7 +118,7 @@ needed_commands=(
     shellcheck
     shfmt
     starship
-    subversion:svn
+    # subversion:svn # is this still necessary?
     tmux
     tokei
     zoxide

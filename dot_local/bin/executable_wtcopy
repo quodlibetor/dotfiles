@@ -1,0 +1,37 @@
+#!/usr/bin/env zsh
+
+# weztermcopy -- copy text to the local computers clipbaord
+
+# wezterm.lua has an if block for OPEN_URL in the user-var-changed handler
+WEZ_CONFIG_CALLBACK=BWM_COPY_TEXT
+usage_text="Usage:
+    $0 <text_to_copy> 
+OR
+    echo 'text to copy' | $0"
+
+for arg in "$@"; do
+    if [[ $arg == -h || $arg == --help ]]; then
+        echo "$usage_text"
+        exit 0
+    fi
+done
+if [[ $# != 1 && -t 0 ]]; then
+  echo "$usage_text"
+    exit 1
+fi
+
+if [[ -n ${1:-} ]]; then
+    content=$1
+else
+    content=$(</dev/stdin)
+fi
+
+encoded=$(echo -n "$content" | base64)
+# call the same thing, but if stdout is not tty put it in a new tab
+# the sleep 0.1 is to give wezterm time to read the results of printf
+cmd=(bash -c "printf '\\033]1337;SetUserVar=%s=%s\\007' \"$WEZ_CONFIG_CALLBACK\" \"$encoded\"; sleep 0.1")
+if [[ -t 1 ]] || ! which wezterm >/dev/null 2>&1; then
+    "${cmd[@]}"
+else
+    wezterm cli spawn -- "${cmd[@]}"
+fi

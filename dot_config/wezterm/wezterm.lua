@@ -10,12 +10,12 @@ wezterm.on('format-tab-title', function(tab, tabs, panes, config, hover, max_wid
   local workdir = '?'
   local host = ''
   if pane.current_working_dir ~= nil then
-	  workdir = pane.current_working_dir.path
-	  workdir = basename(workdir)
-	  host = pane.current_working_dir.host
-	  if host == nil then
-		  host = ""
-	  end
+    workdir = pane.current_working_dir.path
+    workdir = basename(workdir)
+    host = pane.current_working_dir.host
+    if host == nil then
+      host = ""
+    end
   end
   local gitroot = pane.user_vars.gitroot
   if gitroot ~= nil and gitroot ~= "" then
@@ -34,7 +34,9 @@ end)
 
 wezterm.on('user-var-changed', function(window, pane, name, value)
   if name == 'OPEN_URL' then
-     wezterm.open_with(value)
+    wezterm.open_with(value)
+  elseif name == 'BWM_COPY_TEXT' then
+    window:copy_to_clipboard(value, 'Clipboard')
   end
 end)
 
@@ -49,66 +51,66 @@ config.use_ime = false
 config.send_composed_key_when_right_alt_is_pressed = false
 config.term = 'wezterm'
 config.ssh_domains = {
-   {
-      -- This name identifies the domain
-      name = 'coder.bwm',
-      -- The hostname or address to connect to. Will be used to match settings
-      -- from your ssh config file
-      remote_address = 'coder.bwm',
-      -- The username to use on the remote host
-      username = 'coder',
-   },
-   {
-      name = 'coder.bwm-mega',
-      remote_address = 'coder.bwm-mega',
-      -- The username to use on the remote host
-      username = 'coder',
-   },
+  {
+    -- This name identifies the domain
+    name = 'coder.bwm',
+    -- The hostname or address to connect to. Will be used to match settings
+    -- from your ssh config file
+    remote_address = 'coder.bwm',
+    -- The username to use on the remote host
+    username = 'coder',
+  },
+  {
+    name = 'coder.bwm-mega',
+    remote_address = 'coder.bwm-mega',
+    -- The username to use on the remote host
+    username = 'coder',
+  },
 }
 config.keys = {
-   {
-      key = 'r',
-      mods = 'CMD|SHIFT',
-      action = wezterm.action.ReloadConfiguration,
-   },
-   -- These two also depend on the `send_compose_key..` setting above so that
-   -- opt-b and opt-f mean forward/backward word instead of greek letters
-   -- Make Option-Left equivalent to Alt-b which many line editors interpret as backward-word
-   {key="LeftArrow", mods="OPT", action=wezterm.action{SendString="\x1bb"}},
-   -- Make Option-Right equivalent to Alt-f; forward-word
-   {key="RightArrow", mods="OPT", action=wezterm.action{SendString="\x1bf"}},
-   {
-      key = '-',
-      mods = 'CTRL',
-      action = wezterm.action.SplitVertical { domain = 'CurrentPaneDomain' },
-   },
-   {
-      key = '_',
-      mods = 'CTRL',
-      action = wezterm.action.SplitVertical { domain = 'CurrentPaneDomain' },
-   },
-   {
-      key = '%',
-      mods = 'CTRL',
-      action = wezterm.action.SplitHorizontal { domain = 'CurrentPaneDomain' },
-   },
-   {
-      key = '|',
-      mods = 'CTRL',
-      action = wezterm.action.SplitHorizontal { domain = 'CurrentPaneDomain' },
-   },
-   {
-      key = '\\', -- duplicate of | to reduce pinky strain
-      mods = 'CMD|CTRL',
-      action = wezterm.action.SplitHorizontal { domain = 'CurrentPaneDomain' },
-   },
+  {
+    key = 'r',
+    mods = 'CMD|SHIFT',
+    action = wezterm.action.ReloadConfiguration,
+  },
+  -- These two also depend on the `send_compose_key..` setting above so that
+  -- opt-b and opt-f mean forward/backward word instead of greek letters
+  -- Make Option-Left equivalent to Alt-b which many line editors interpret as backward-word
+  { key = "LeftArrow", mods = "OPT", action = wezterm.action { SendString = "\x1bb" } },
+  -- Make Option-Right equivalent to Alt-f; forward-word
+  { key = "RightArrow", mods = "OPT", action = wezterm.action { SendString = "\x1bf" } },
+  {
+    key = '-',
+    mods = 'CTRL',
+    action = wezterm.action.SplitVertical { domain = 'CurrentPaneDomain' },
+  },
+  {
+    key = '_',
+    mods = 'CTRL',
+    action = wezterm.action.SplitVertical { domain = 'CurrentPaneDomain' },
+  },
+  {
+    key = '%',
+    mods = 'CTRL',
+    action = wezterm.action.SplitHorizontal { domain = 'CurrentPaneDomain' },
+  },
+  {
+    key = '|',
+    mods = 'CTRL',
+    action = wezterm.action.SplitHorizontal { domain = 'CurrentPaneDomain' },
+  },
+  {
+    key = '\\',   -- duplicate of | to reduce pinky strain
+    mods = 'CMD|CTRL',
+    action = wezterm.action.SplitHorizontal { domain = 'CurrentPaneDomain' },
+  },
 }
 config.mouse_bindings = {
-   {
-      event = { Down = { streak = 3, button = 'Left' } },
-      action = wezterm.action.SelectTextAtMouseCursor 'SemanticZone',
-      mods = 'NONE',
-   },
+  {
+    event = { Down = { streak = 3, button = 'Left' } },
+    action = wezterm.action.SelectTextAtMouseCursor 'SemanticZone',
+    mods = 'NONE',
+  },
 }
 
 return config

@@ -12,16 +12,18 @@ vim.opt.rtp:prepend(vim.env.LAZY or lazypath)
 local wez_bin = os.getenv("WEZTERM_EXECUTABLE")
 
 if
-  vim.version().minor >= 10
-  and wez_bin
-  and string.find(wez_bin, "server") -- means we are a server that a client is talking to
+    vim.version().minor >= 10
+    and wez_bin
+    and string.find(wez_bin, "server") -- means we are a server that a client is talking to
 then
-  local function no_paste(_)
+  -- https://github.com/neovim/neovim/issues/28611#issuecomment-2147744670
+  local function local_paste(_)
     return function(_)
-      -- Do nothing! We can't paste with OSC52
+      local content = vim.fn.getreg('"')
+      return vim.split(content, '\n')
     end
   end
-  -- not working
+  vim.opt.clipboard:append("unnamedplus")
   vim.g.clipboard = {
     name = "OSC 52",
     copy = {
@@ -30,8 +32,8 @@ then
     },
     -- https://github.com/neovim/neovim/issues/28611
     paste = {
-      ["+"] = no_paste("+"),
-      ["*"] = no_paste("*"),
+      ["+"] = local_paste("+"),
+      ["*"] = local_paste("*"),
     },
   }
 end
@@ -39,7 +41,7 @@ end
 require("lazy").setup({
   spec = {
     -- add LazyVim and import its plugins
-    { "LazyVim/LazyVim", import = "lazyvim.plugins" },
+    { "LazyVim/LazyVim",                        import = "lazyvim.plugins" },
     -- import any extras modules here
     -- { import = "lazyvim.plugins.extras.lang.typescript" },
     -- { import = "lazyvim.plugins.extras.lang.json" },

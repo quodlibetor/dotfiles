@@ -1,4 +1,5 @@
 local wezterm = require 'wezterm'
+local act = wezterm.action
 
 function basename(s)
   return string.gsub(string.gsub(s, "/+$", ""), '(.*/)(.*)', '%2')
@@ -76,33 +77,43 @@ config.keys = {
   -- These two also depend on the `send_compose_key..` setting above so that
   -- opt-b and opt-f mean forward/backward word instead of greek letters
   -- Make Option-Left equivalent to Alt-b which many line editors interpret as backward-word
-  { key = "LeftArrow", mods = "OPT", action = wezterm.action { SendString = "\x1bb" } },
+  { key = "LeftArrow",  mods = "OPT", action = wezterm.action { SendString = "\x1bb" } },
   -- Make Option-Right equivalent to Alt-f; forward-word
   { key = "RightArrow", mods = "OPT", action = wezterm.action { SendString = "\x1bf" } },
   {
     key = '-',
     mods = 'CTRL',
-    action = wezterm.action.SplitVertical { domain = 'CurrentPaneDomain' },
+    action = act.SplitVertical { domain = 'CurrentPaneDomain' },
   },
   {
     key = '_',
     mods = 'CTRL',
-    action = wezterm.action.SplitVertical { domain = 'CurrentPaneDomain' },
+    action = act.SplitVertical { domain = 'CurrentPaneDomain' },
   },
   {
     key = '%',
     mods = 'CTRL',
-    action = wezterm.action.SplitHorizontal { domain = 'CurrentPaneDomain' },
+    action = act.SplitHorizontal { domain = 'CurrentPaneDomain' },
   },
   {
     key = '|',
-    mods = 'CTRL',
-    action = wezterm.action.SplitHorizontal { domain = 'CurrentPaneDomain' },
+    mods = 'CTRL|SHIFT',
+    action = act.SplitHorizontal { domain = 'CurrentPaneDomain' },
   },
   {
-    key = '\\',   -- duplicate of | to reduce pinky strain
+    key = '\\', -- duplicate of | to reduce pinky strain
     mods = 'CMD|CTRL',
-    action = wezterm.action.SplitHorizontal { domain = 'CurrentPaneDomain' },
+    action = act.SplitHorizontal { domain = 'CurrentPaneDomain' },
+  },
+  -- Clears the scrollback and viewport, and then sends CTRL-L to ask the
+  -- shell to redraw its prompt
+  {
+    key = 'k',
+    mods = 'CMD',
+    action = act.Multiple {
+      act.ClearScrollback 'ScrollbackAndViewport',
+      act.SendKey { key = 'L', mods = 'CTRL' },
+    },
   },
 }
 config.mouse_bindings = {

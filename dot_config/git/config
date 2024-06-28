@@ -23,7 +23,8 @@
     #
     # If the remote default branch is not named `main` sometimes I make my
     # local default branch be main, so check for main first
-    sync = !"if (git rev-parse --verify main >/dev/null 2>&1) ; then export local=main ; else export local=$(git default-branch) ; fi ; export remote=$(git default-branch) ; export current=$(git branch --show-current); if [[ $current == $local ]] ; then git pull ; else git fetch origin ${remote}:${local} ; fi ; (git fetch origin &)"
+    sync = !"if (git rev-parse --verify main >/dev/null 2>&1) ; then export local=main ; else export local=$(git default-branch) ; fi ; export remote=$(git default-branch) ; export current=$(git branch --show-current); if [ "$current" = "$local" ] ; then git pull ; else git fetch origin ${remote}:${local} ; fi ; (git fetch origin &)"
+    su = !"git sync && git rebase origin/main"
     cleanup = !"git rebase -i $(git merge-base @ origin/$(git default-branch))"
     publish = !"git push -u origin $(git rev-parse --abbrev-ref HEAD)"
 

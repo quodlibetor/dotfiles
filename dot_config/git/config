@@ -10,6 +10,8 @@
     co = checkout
     f = commit --amend --no-edit
     if = instafix
+    fu = !"git add -u && git f"
+    uf = !"git add -u && git instafix"
 
     # ==== Repo properties
     root = rev-parse --show-toplevel

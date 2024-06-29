@@ -17,8 +17,14 @@ bindkey -e
 zstyle :compinstall filename '/Users/bwm/.zshrc'
 
 if (( $+commands[brew] )) ; then
-    BREW_PREFIX=$(brew --prefix)
-    [ -d ${BREW_PREFIX}/share/zsh/site-functions ] && fpath+=(${BREW_PREFIX}/share/zsh/site-functions)
+    # technically this should be BREW_PREFIX=$(brew --prefix) but that starts a ruby 
+    # interpreter, which sucks for shell startup time.
+    for brew_prefix in /usr/local /opt/homebrew /home/linuxbrew/.linuxbrew ; do
+        if [[ -d ${brew_prefix}/share/zsh/site-functions ]] ; then 
+            fpath+=(${brew_prefix}/share/zsh/site-functions)
+            break
+        fi
+    done
 fi
 
 fpath=($fpath $HOME/.local/zsh-completions $HOME/.zplugin/completions)
@@ -57,11 +63,12 @@ autoload -Uz _zinit
 
 # Load a few important annexes, without Turbo
 # (this is currently required for annexes)
-zinit light-mode for \
-    zdharma-continuum/zinit-annex-as-monitor \
-    zdharma-continuum/zinit-annex-bin-gem-node \
-    zdharma-continuum/zinit-annex-patch-dl \
-    zdharma-continuum/zinit-annex-rust
+#
+# Not sure if I still use any of these
+# zinit light-mode for \
+#     zdharma-continuum/zinit-annex-as-monitor \
+#     zdharma-continuum/zinit-annex-bin-gem-node \
+#     zdharma-continuum/zinit-annex-patch-dl
 
 ### End of Zinit's installer chunk
 
@@ -285,9 +292,6 @@ if [[ -f /usr/local/bin/lesspipe.sh ]]; then
 elif [[ -f /opt/homebrew/bin/lesspipe.sh ]]; then
     export LESSOPEN="|/opt/homebrew/bin/lesspipe.sh %s" LESS_ADVANCED_PREPROCESSOR=1
 fi
-
-#[ -f ~/.inshellisense/key-bindings.zsh ] && source ~/.inshellisense/key-bindings.zsh
-export GIT_INSTAFIX_UPSTREAM=main
 
 # anything that should be set only on this computer
 [[ -f $HOME/.zshrc-local ]] && source "$HOME/.zshrc-local"

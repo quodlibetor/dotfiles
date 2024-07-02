@@ -8,9 +8,10 @@ extra_path=(
     "$HOME/.local/bin"
     "$HOME/.cargo/bin"
 )
-for pth in /opt/homebrew/bin /home/linuxbrew/.linuxbrew/bin; do
+for pth in /opt/homebrew/ /home/linuxbrew/.linuxbrew/; do
   if [[ -d $pth ]]; then
-    extra_path+=$pth
+    extra_path+=${pth}/bin
+    extra_path+=${pth}/sbin
     break
   fi
 done
@@ -19,7 +20,6 @@ export path=(
     $path
     /usr/local/bin
     /usr/local/sbin
-    /opt/homebrew/sbin
 )
 unset extra_path pth
 # workaround for some things, I don't remember what so leave it disabled until something breaks

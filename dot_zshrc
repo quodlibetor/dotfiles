@@ -17,10 +17,10 @@ bindkey -e
 zstyle :compinstall filename '/Users/bwm/.zshrc'
 
 if (( $+commands[brew] )) ; then
-    # technically this should be BREW_PREFIX=$(brew --prefix) but that starts a ruby 
+    # technically this should be BREW_PREFIX=$(brew --prefix) but that starts a ruby
     # interpreter, which sucks for shell startup time.
     for brew_prefix in /usr/local /opt/homebrew /home/linuxbrew/.linuxbrew ; do
-        if [[ -d ${brew_prefix}/share/zsh/site-functions ]] ; then 
+        if [[ -d ${brew_prefix}/share/zsh/site-functions ]] ; then
             fpath+=(${brew_prefix}/share/zsh/site-functions)
             break
         fi
@@ -63,12 +63,11 @@ autoload -Uz _zinit
 
 # Load a few important annexes, without Turbo
 # (this is currently required for annexes)
-#
-# Not sure if I still use any of these
 # zinit light-mode for \
 #     zdharma-continuum/zinit-annex-as-monitor \
 #     zdharma-continuum/zinit-annex-bin-gem-node \
-#     zdharma-continuum/zinit-annex-patch-dl
+#     zdharma-continuum/zinit-annex-patch-dl \
+#     zdharma-continuum/zinit-annex-rust
 
 ### End of Zinit's installer chunk
 
@@ -91,6 +90,9 @@ zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 
 zinit ice wait lucid atload'_zsh_autosuggest_start'
 zinit light zsh-users/zsh-autosuggestions
+# inshellisense contradicts zsh-autosuggestions
+#[ -f ~/.inshellisense/key-bindings.zsh ] && source ~/.inshellisense/key-bindings.zsh
+
 
 zinit ice wait lucid
 zinit snippet OMZ::lib/completion.zsh

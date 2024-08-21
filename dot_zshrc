@@ -144,7 +144,7 @@ alias -r la="ls -la"
 alias -r ll="ls -l"
 alias -r lzd='lazydocker'
 alias -r lzg='lazygit'
-alias -r rg="rg --type-add 'tilt:*.tilt' --type-add 'tilt:Tiltfile'"
+alias -r rg="rg --type-add 'tilt:*.tilt' --type-add 'tilt:Tiltfile' --type-add 'bazel:.bazelproject' --type-add 'bazel:.bazelrc.user'"
 alias -r tf=terraform
 
 # Set the the built-in time format to be more like bash, with some goodies.
@@ -289,11 +289,11 @@ vterm_printf() {
     fi
 }
 
-if [[ -f /usr/local/bin/lesspipe.sh ]]; then
-    export LESSOPEN='|/usr/local/bin/lesspipe.sh %s' LESS_ADVANCED_PREPROCESSOR=1
-elif [[ -f /opt/homebrew/bin/lesspipe.sh ]]; then
-    export LESSOPEN="|/opt/homebrew/bin/lesspipe.sh %s" LESS_ADVANCED_PREPROCESSOR=1
+if lesspipe=$(which lesspipe.sh 2>/dev/null) ; then
+    export LESSOPEN="|'$lesspipe' %s" LESS_ADVANCED_PREPROCESSOR=1
 fi
 
 # anything that should be set only on this computer
 [[ -f $HOME/.zshrc-local ]] && source "$HOME/.zshrc-local"
+[[ -f "$HOME/.rye/env" ]] && source "$HOME/.rye/env"
+[[ -f "$HOME/.local/env" ]] && . "$HOME/.local/env"

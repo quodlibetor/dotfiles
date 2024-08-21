@@ -7,13 +7,14 @@ extra_path=(
     "$HOME/.local/clang/bin"
     "$HOME/.local/bin"
     "$HOME/.cargo/bin"
+    "$HOME/.rye/shims"
 )
-for pth in /opt/homebrew/ /home/linuxbrew/.linuxbrew/; do
-  if [[ -d $pth ]]; then
-    extra_path+=${pth}/bin
-    extra_path+=${pth}/sbin
-    break
-  fi
+for pth in /opt/homebrew /home/linuxbrew/.linuxbrew; do
+    if [[ -d $pth ]]; then
+        extra_path+=${pth}/bin
+        extra_path+=${pth}/sbin
+        break
+    fi
 done
 export path=(
     "${extra_path[@]}"
@@ -44,11 +45,11 @@ fi
 export GOPATH=$HOME/go
 export PATH=$PATH:$GOPATH/bin
 
-if [[ -d $HOME/.local/share/man ]] ; then
+if [[ -d $HOME/.local/share/man ]]; then
     export MANPATH="$HOME/.local/share/man:$MANPATH"
 fi
 
-if [[ $TERM == wezterm && -z $BROWSER ]] && (( $+commands[wezterm] )) && (( $+commands[weztermopen] )) ; then
+if [[ $TERM == wezterm && -z $BROWSER ]] && (( $+commands[wezterm] )) && (( $+commands[weztermopen] )); then
     export BROWSER=weztermopen
 elif (( $+commands[fwd-browse] )) && [[ $(uname -s) != Darwin && -z $BROWSER ]]; then
     export BROWSER=fwd-browse

@@ -20,7 +20,7 @@ then
   local function local_paste(_)
     return function(_)
       local content = vim.fn.getreg('"')
-      return vim.split(content, '\n')
+      return vim.split(content, "\n")
     end
   end
   vim.opt.clipboard:append("unnamedplus")

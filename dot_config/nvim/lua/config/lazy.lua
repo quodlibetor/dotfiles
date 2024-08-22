@@ -16,7 +16,6 @@ if
     and wez_bin
     and string.find(wez_bin, "server") -- means we are a server that a client is talking to
 then
-  -- https://github.com/neovim/neovim/issues/28611#issuecomment-2147744670
   local function local_paste(_)
     return function(_)
       local content = vim.fn.getreg('"')
@@ -27,8 +26,8 @@ then
   vim.g.clipboard = {
     name = "OSC 52",
     copy = {
-      ["+"] = require("vim.ui.clipboard.osc52").copy,
-      ["*"] = require("vim.ui.clipboard.osc52").copy,
+      ["+"] = require("vim.ui.clipboard.osc52").copy("+"),
+      ["*"] = require("vim.ui.clipboard.osc52").copy("*"),
     },
     -- https://github.com/neovim/neovim/issues/28611
     paste = {

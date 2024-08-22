@@ -54,3 +54,6 @@ if [[ $TERM == wezterm && -z $BROWSER ]] && (( $+commands[wezterm] )) && (( $+co
 elif (( $+commands[fwd-browse] )) && [[ $(uname -s) != Darwin && -z $BROWSER ]]; then
     export BROWSER=fwd-browse
 fi
+
+# this makes sudo know about wezterm capabilities
+[[ -n "$WEZTERM_EXECUTABLE" && -f "$HOME/.terminfo/w/wezterm" ]] && export TERMCAP="$HOME/.terminfo/w/wezterm"

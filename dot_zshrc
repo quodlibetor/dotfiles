@@ -103,6 +103,9 @@ zinit snippet https://github.com/docker/cli/blob/master/contrib/completion/zsh/_
 zinit ice wait lucid
 zinit load 'wfxr/forgit'
 
+zinit ice wait lucid
+zinit light Aloxaf/fzf-tab
+
 # history
 setopt extended_history       # record timestamp of command in HISTFILE
 setopt hist_ignore_space      # ignore commands that start with space
@@ -146,6 +149,7 @@ alias -r lzd='lazydocker'
 alias -r lzg='lazygit'
 alias -r rg="rg --type-add 'tilt:*.tilt' --type-add 'tilt:Tiltfile' --type-add 'bazel:.bazelproject' --type-add 'bazel:.bazelrc.user'"
 alias -r tf=terraform
+alias -r ubi="ubi --in $HOME/.local/bin"
 
 # Set the the built-in time format to be more like bash, with some goodies.
 export TIMEFMT='

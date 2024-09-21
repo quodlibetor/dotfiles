@@ -55,5 +55,7 @@ elif (( $+commands[fwd-browse] )) && [[ $(uname -s) != Darwin && -z $BROWSER ]];
     export BROWSER=fwd-browse
 fi
 
+(( $+commands[pspg] )) && PSQL_PAGER='pspg --reprint-on-exit'
+
 # this makes sudo know about wezterm capabilities
 [[ -n "$WEZTERM_EXECUTABLE" && -f "$HOME/.terminfo/w/wezterm" ]] && export TERMCAP="$HOME/.terminfo/w/wezterm"

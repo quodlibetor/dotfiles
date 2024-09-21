@@ -1,0 +1,7 @@
+[client]
+{{ if lookPath "pspg" -}}
+pager = pspg --reprint-on-exit --quit-if-one-screen
+{{- else -}}
+pager = less --quit-if-one-screen --chop-long-lines --ignore-case --no-init
+{{- end }}
+

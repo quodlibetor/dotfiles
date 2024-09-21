@@ -113,6 +113,7 @@ needed_commands=(
     lesspipe:lesspipe.sh
     mise
     nvim
+    pspg
     quodlibetor/git-tools/git-instafix:git-instafix
     ripgrep:rg
     shellcheck

@@ -90,6 +90,11 @@ zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 
 zinit ice wait lucid atload'_zsh_autosuggest_start'
 zinit light zsh-users/zsh-autosuggestions
+
+(( $+commands[uv] )) && eval "$(uv generate-shell-completion zsh)"
+(( $+commands[uvx] )) && eval "$(uvx --generate-shell-completion zsh)"
+(( $+commands[ruff] )) && eval "$(ruff generate-shell-completion zsh)"
+
 # inshellisense contradicts zsh-autosuggestions
 #[ -f ~/.inshellisense/key-bindings.zsh ] && source ~/.inshellisense/key-bindings.zsh
 

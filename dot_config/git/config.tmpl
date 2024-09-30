@@ -80,6 +80,16 @@
     # speed up log
     commitgraph = true
 
+[include]
+    path = ~/.gitconfig_local
+
+{{ if lookPath "gh" -}}
+[credential "https://github.com"]
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = !/usr/bin/gh auth git-credential
+{{- end }}
+
 [interactive]
     diffFilter = delta --color-only --side-by-side
 

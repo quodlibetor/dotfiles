@@ -171,7 +171,10 @@ export TIME="$TIMEFMT"
 REPO_DIR="$HOME/repos"
 
 psgrep() {
-    ps -eo 'pid ppid %cpu %mem etime args' | rg --color=always "(PID|$1)" | rg -v -w "rg"
+    ps -eo 'pid ppid %cpu %mem etime args' \
+      | rg --color=always "(PID|$1)" \
+      | rg -v -w "rg" \
+      | rg -o --color=never '^.{0,500}'
 }
 
 # github clone

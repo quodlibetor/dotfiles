@@ -71,6 +71,7 @@ autoload -Uz _zinit
 
 ### End of Zinit's installer chunk
 
+zinit ice wait lucid
 zinit light zdharma/fast-syntax-highlighting
 # TAB COMPLETIONS
 zinit ice wait"0b" lucid blockf
@@ -82,11 +83,12 @@ zstyle ':completion:*' select-prompt '%SScrolling active: current selection at %
 zstyle ':completion:*:descriptions' format '-- %d --'
 zstyle ':completion:*:processes' command 'ps -au$USER'
 zstyle ':completion:complete:*:options' sort false
-#zstyle ':fzf-tab:complete:_zlua:*' query-string input
 zstyle ':completion:*:*:*:*:processes' command "ps -u $USER -o pid,user,comm,cmd -w -w"
-#zstyle ':fzf-tab:complete:kill:argument-rest' extra-opts --preview=$extract'ps --pid=$in[(w)1] -o cmd --no-headers -w -w' --preview-window=down:3:wrap
 zstyle ":completion:*:git-checkout:*" sort false
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+
+#zstyle ':fzf-tab:complete:_zlua:*' query-string input
+#zstyle ':fzf-tab:complete:kill:argument-rest' extra-opts --preview=$extract'ps --pid=$in[(w)1] -o cmd --no-headers -w -w' --preview-window=down:3:wrap
 
 zinit ice wait lucid atload'_zsh_autosuggest_start'
 zinit light zsh-users/zsh-autosuggestions
@@ -98,15 +100,16 @@ zinit light zsh-users/zsh-autosuggestions
 # inshellisense contradicts zsh-autosuggestions
 #[ -f ~/.inshellisense/key-bindings.zsh ] && source ~/.inshellisense/key-bindings.zsh
 
-
 zinit ice wait lucid
 zinit snippet OMZ::lib/completion.zsh
 
 zinit ice as"completion"
 zinit snippet https://github.com/docker/cli/blob/master/contrib/completion/zsh/_docker
 
-zinit ice wait lucid
-zinit load 'wfxr/forgit'
+export FORGIT_CHECKOUT_BRANCH_BRANCH_GIT_OPTS='--sort=-committerdate'
+[[ $UNAME == Linux && $TERM == wezterm ]] && export FORGIT_COPY_CMD='wtcopy'
+zinit ice wait lucid cp"bin/* -> $HOME/.local/bin/git-forgit"
+zinit light wfxr/forgit
 
 zinit ice wait lucid
 zinit light Aloxaf/fzf-tab

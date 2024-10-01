@@ -137,7 +137,6 @@ if (( $+commands[fzf] )) ; then
     export FZF_ALT_C_COMMAND="fd --type directory"
 fi
 
-(( $+commands[eza] )) && alias -r ls=eza
 if (( $+commands[nvim] )); then
     alias -r vim=nvim
     export EDITOR=nvim
@@ -151,8 +150,14 @@ alias -r dsa='docker stop $(docker ps -q)' # docker stop all
 alias -r e='emacsclient --no-wait --socket-name="${HOME}/.emacs.d/server/server"'
 alias -r et='emacsclient --tty --socket-name="${HOME}/.emacs.d/server/server"'
 alias -r grep="grep --color=auto"
-alias -r la="ls -la"
-alias -r ll="ls -l"
+if (( $+commands[eza] )); then 
+  alias -r ls="eza --group-directories-first --sort extension"
+  alias -r la="ls -lA --git"
+  alias -r ll="ls -l --git"
+else
+  alias -r la="ls -lA"
+  alias -r ll="ls -l"
+fi
 alias -r lzd='lazydocker'
 alias -r lzg='lazygit'
 alias -r rg="rg --type-add 'tilt:*.tilt' --type-add 'tilt:Tiltfile' --type-add 'bazel:.bazelproject' --type-add 'bazel:.bazelrc.user'"

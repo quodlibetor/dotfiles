@@ -59,3 +59,4 @@ fi
 
 # this makes sudo know about wezterm capabilities
 [[ -n "$WEZTERM_EXECUTABLE" && -f "$HOME/.terminfo/w/wezterm" ]] && export TERMCAP="$HOME/.terminfo/w/wezterm"
+export COLORTERM=truecolor

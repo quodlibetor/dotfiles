@@ -148,7 +148,7 @@ alias -r cm=chezmoi
 alias -r dc="docker compose"
 alias -r dsa='docker stop $(docker ps -q)' # docker stop all
 alias -r e='emacsclient --no-wait --socket-name="${HOME}/.emacs.d/server/server"'
-alias -r et='emacsclient --tty --socket-name="${HOME}/.emacs.d/server/server"'
+alias -r et='TERM=xterm-24bit COLORTERM=truecolor ALTERNATE_EDITOR="" emacsclient --tty --socket-name="${HOME}/.emacs.d/server/server"'
 alias -r grep="grep --color=auto"
 if (( $+commands[eza] )); then 
   alias -r ls="eza --group-directories-first --sort extension"
@@ -160,6 +160,7 @@ else
 fi
 alias -r lzd='lazydocker'
 alias -r lzg='lazygit'
+alias -r ghprc='gh pr checkout'
 alias -r rg="rg --type-add 'tilt:*.tilt' --type-add 'tilt:Tiltfile' --type-add 'bazel:.bazelproject' --type-add 'bazel:.bazelrc.user'"
 alias -r tf=terraform
 alias -r ubi="ubi --in $HOME/.local/bin"

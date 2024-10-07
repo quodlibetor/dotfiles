@@ -165,6 +165,15 @@ alias -r rg="rg --type-add 'tilt:*.tilt' --type-add 'tilt:Tiltfile' --type-add '
 alias -r tf=terraform
 alias -r ubi="ubi --in $HOME/.local/bin"
 
+# emacs magit
+eg() {
+    git_root=$(git rev-parse --show-toplevel)
+    et -e "(progn (magit-status \"${git_root}\") (delete-other-windows))"
+    if which osascript >/dev/null 2>&1; then
+        osascript -e "tell application \"Emacs\" to activate"
+    fi
+}
+
 # Set the the built-in time format to be more like bash, with some goodies.
 export TIMEFMT='
 real	%E

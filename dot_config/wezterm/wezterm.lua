@@ -47,7 +47,9 @@ if wezterm.config_builder then
 end
 
 config.font = wezterm.font("JetBrains Mono")
-config.color_scheme = "Dracula"
+-- config.color_scheme = "Dracula"
+-- config.color_scheme = "Modus Vivendi (Gogh)"
+config.color_scheme = "Modus-Vivendi"
 config.use_ime = false
 config.send_composed_key_when_right_alt_is_pressed = false
 config.term = "wezterm"

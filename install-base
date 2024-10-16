@@ -34,7 +34,7 @@ if [[ $OS == darwin ]]; then
 
     runv "$brewcmd" install --cask \
         rectangle \
-        wezterm-nightly \
+        wezterm@nightly \
         ;
 
     if [[ ! -d $HOME/.tmux/plugins ]]; then
@@ -127,7 +127,7 @@ needed_commands=(
 )
 
 if [[ $OS == linux ]]; then
-    needed_cmds+=(watchman)
+    needed_commands+=(watchman)
 fi
 
 install_cmds=()

@@ -108,6 +108,7 @@ needed_commands=(
     git-absorb
     git-delete-merged-branches
     git-delta:delta
+    ejoffe/tap/spr:git-spr
     jq
     lazygit
     lesspipe:lesspipe.sh

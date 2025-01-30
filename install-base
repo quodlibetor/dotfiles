@@ -64,12 +64,16 @@ elif [[ $OS == linux ]]; then
 
     install=()
 
-    curl -fL https://github.com/wez/wezterm/releases/download/nightly/wezterm-nightly.Ubuntu22.04.deb -o /tmp/wezterm-nightly.deb || true
+    runv curl -fL https://github.com/wez/wezterm/releases/download/nightly/wezterm-nightly.Ubuntu22.04.deb -o /tmp/wezterm-nightly.deb || true
 
-    [[ -f /tmp/wezterm-nightly.deb ]] && install+=(/tmp/wezterm-nightly.deb)
+    if [[ -f /tmp/wezterm-nightly.deb ]]; then
+        install+=(/tmp/wezterm-nightly.deb)
+    else
+        echo "Failed to download wezterm-nightly.deb"
+    fi
     [[ -f "$HOME/emacs-desired-runtime-deps.list" ]] && install+=($(cat "$HOME/emacs-desired-runtime-deps.list"))
 
-    echo "INSTALL: apt install log: $(date)" >$APT_LOG_FILE
+    echo "INSTALL: apt install log: $(date)" | tee $APT_LOG_FILE
 
     sudo env DEBIAN_FRONTEND=noninteractive apt-get update
     sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${install[@]}" >>$APT_LOG_FILE 2>&1 &
@@ -115,11 +119,13 @@ needed_commands=(
     mise
     nvim
     pspg
-    quodlibetor/git-tools/git-instafix:git-instafix
+    quodlibetor/tap/git-instafix:git-instafix
+    quodlibetor/tap/s3glob:s3glob
     ripgrep:rg
     shellcheck
     shfmt
     starship
+    tabiew
     # subversion:svn # is this still necessary?
     tmux
     tokei

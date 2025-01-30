@@ -7,7 +7,6 @@ extra_path=(
     "$HOME/.local/clang/bin"
     "$HOME/.local/bin"
     "$HOME/.cargo/bin"
-    "$HOME/.rye/shims"
 )
 for pth in /opt/homebrew /home/linuxbrew/.linuxbrew; do
     if [[ -d $pth ]]; then
@@ -32,7 +31,7 @@ unset extra_path pth
 # integration if necessary.
 MISE_SHIMDIR="$HOME"/.local/share/mise/shims
 if [[ -d "$MISE_SHIMDIR" ]]; then
-    path+=("$MISE_SHIMDIR")
+    path=("$MISE_SHIMDIR" $path)
 fi
 # needs to be at the end because commandlinetools overwrites the llvm that cargo wants, I think
 CLT_BIN=/Library/Developer/CommandLineTools/usr/bin
@@ -42,8 +41,6 @@ CLT_BIN=/Library/Developer/CommandLineTools/usr/bin
 if [[ $(uname -s) == Darwin ]]; then
     export CGO_CPPFLAGS="-Wno-error -Wno-nullability-completeness -Wno-expansion-to-defined"
 fi
-export GOPATH=$HOME/go
-export PATH=$PATH:$GOPATH/bin
 
 if [[ -d $HOME/.local/share/man ]]; then
     export MANPATH="$HOME/.local/share/man:$MANPATH"

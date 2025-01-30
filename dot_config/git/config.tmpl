@@ -42,10 +42,12 @@
     # log commands
     lg = lg-exclude-prs
     lgn = lg-exclude-prs --no-merges
-    lga = lg --branches=* --remotes=*
+    lga = lg --branches=*
+    lgaa = lga --remotes=*
     # log short -- only 15 commits
     lgs = lg -15
-    lgsa = lgs --branches=* --remotes=*
+    lgsa = lga -15
+    lgsaa = lgaa -15
     # log with prs
     lgp = lg-base
     lgps = lg-base -15

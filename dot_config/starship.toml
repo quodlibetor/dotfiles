@@ -19,6 +19,11 @@ time_format = "%R" # Hour:Minute Format
 format = '[[$time](fg:#a0a9cb bg:#1d2230)]($style)'
 
 # Disabling things
+[aws]
+disabled = true
+
+[gcloud]
+disabled = true
 
 [kubernetes]
 disabled = true

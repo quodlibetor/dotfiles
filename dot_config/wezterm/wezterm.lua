@@ -132,9 +132,9 @@ tabline.setup({
     },
     tab_inactive = {
       'index',
-      git_root_dir,
-      '->',
       { 'process', padding = { left = 0, right = 1 } },
+      '-> ',
+      git_root_dir,
     },
     tabline_x = {}, --'ram', 'cpu' },
     tabline_y = {}, --'datetime', 'battery' },

@@ -160,13 +160,15 @@ if [[ -n "${WEZTERM_PANE}" ]]; then
     printf "%s" "$gitdir"
   }
 
-  precmd() {
+  __git_precmd() {
     local gr="$(bwm_gitroot)"
     if [[ $gr != $__BWM_LAST_GIT_ROOT ]]; then
       printf "\033]1337;SetUserVar=%s=%s\007" git_root "$(bwm_gitroot | base64)"
       __BWM_LAST_GIT_ROOT="$gr"
     fi
   }
+
+  precmd_functions+=(__git_precmd)
 fi
 
 (( $+commands[starship] )) && eval "$(starship init zsh)"

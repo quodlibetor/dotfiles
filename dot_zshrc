@@ -93,8 +93,8 @@ zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 zinit ice wait lucid atload'_zsh_autosuggest_start'
 zinit light zsh-users/zsh-autosuggestions
 
-(( $+commands[uv] )) && eval "$(uv generate-shell-completion zsh)"
-(( $+commands[uvx] )) && eval "$(uvx --generate-shell-completion zsh)"
+(( $+commands[uv] )) && ! typeset -f _uv >/dev/null 2>&1 && eval "$(uv generate-shell-completion zsh)"
+(( $+commands[uvx] )) && ! typeset -f _uvx >/dev/null 2>&1 && eval "$(uvx --generate-shell-completion zsh)"
 (( $+commands[ruff] )) && eval "$(ruff generate-shell-completion zsh)"
 
 # inshellisense contradicts zsh-autosuggestions
@@ -111,10 +111,11 @@ export FORGIT_CHECKOUT_BRANCH_BRANCH_GIT_OPTS='--sort=-committerdate'
 zinit ice wait lucid cp"bin/* -> $HOME/.local/bin/git-forgit"
 zinit light wfxr/forgit
 
-zinit ice wait lucid
-zinit light Aloxaf/fzf-tab
+# zinit ice wait lucid
+# zinit light Aloxaf/fzf-tab
 
 # history
+setopt incappendhistory       # write to history file after every command
 setopt extended_history       # record timestamp of command in HISTFILE
 setopt hist_ignore_space      # ignore commands that start with space
 setopt hist_verify            # show command with history expansion to user before running it
@@ -188,7 +189,7 @@ alias -r dsa='docker stop $(docker ps -q)' # docker stop all
 alias -r e='emacsclient --no-wait --socket-name="${HOME}/.emacs.d/server/server"'
 alias -r et='TERM=xterm-24bit COLORTERM=truecolor ALTERNATE_EDITOR="" emacsclient --tty --socket-name="${HOME}/.emacs.d/server/server"'
 alias -r grep="grep --color=auto"
-if (( $+commands[eza] )); then 
+if (( $+commands[eza] )); then
   alias -r ls="eza --group-directories-first --sort extension"
   alias -r la="ls -lA --git"
   alias -r ll="ls -l --git"

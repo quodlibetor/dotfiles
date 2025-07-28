@@ -91,7 +91,7 @@ enable_pager = True
 
 # Choose a specific pager
 {{ if lookPath "pspg" -}}
-pager = 'pspg --reprint-on-exit --quit-if-one-screen'
+pager = 'pspg --quit-if-one-screen --reprint-on-exit'
 {{- else -}}
 pager = 'less --quit-if-one-screen --chop-long-lines --ignore-case --no-init'
 {{- end }}

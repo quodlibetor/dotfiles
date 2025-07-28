@@ -12,6 +12,7 @@
     if = instafix
     fu = !"git add -u && git f"
     uf = !"git add -u && git instafix"
+    rc = rebase --continue
 
     # ==== Repo properties
     root = rev-parse --show-toplevel
@@ -26,12 +27,16 @@
     # If the remote default branch is not named `main` sometimes I make my
     # local default branch be main, so check for main first
     sync = !"if (git rev-parse --verify main >/dev/null 2>&1) ; then export local=main ; else export local=$(git default-branch) ; fi ; export remote=$(git default-branch) ; export current=$(git branch --show-current); if [ "$current" = "$local" ] ; then git pull ; else git fetch origin ${remote}:${local} ; fi ; (git fetch origin >/dev/null 2>&1 &)"
-    syncm = !"git sync && git rebase -i main"
+    syncm = !"git sync && git rebase -i origin/main"
 
     dgb = !"git branch --format '%(refname:short) %(upstream:track)' | awk '$2 == \"[gone]\" { print $1 }' | xargs -r git branch -D"
     su = !"git sync && git rebase origin/main"
     cleanup = !"git rebase -i $(git merge-base @ origin/$(git default-branch))"
     publish = !"git push -u origin $(git rev-parse --abbrev-ref HEAD)"
+
+    # Show which file a config came from. Provide an argument to filter options using grep
+    # the comment at the end prevents argument being supplied twice
+    whichconfig = !"git config --list --show-origin | rg \"${1:-}\" #"
 
     # ==== Logging
     # Basic format for all log calls
@@ -57,6 +62,18 @@
     tree-base = lga --simplify-by-decoration --decorate-refs-exclude='refs/pullreqs/*' --decorate-refs-exclude='refs/tags/*'
     tree = tree-base --decorate-refs-exclude='refs/remotes/*/*'
 
+    # ==== difftastic
+    # Difftastic aliases, so `git dlog` is `git log` with difftastic and so on.
+    dlg = -c diff.external=difft lg --ext-diff
+    dshow = -c diff.external=difft show --ext-diff
+    ddiff = -c diff.external=difft diff
+    # `git log` with patches shown with difftastic.
+    dl = -c diff.external=difft log -p --ext-diff
+    # Show the most recent commit with difftastic.
+    ds = -c diff.external=difft show --ext-diff
+    # `git diff` with difftastic.
+    dft = -c diff.external=difft diff
+
     # ==== unmerged branches
     bt = !"git tree-base --color=always | grep -Ev $( git branch --all --merged  | sed -E -e 's/ //g' -e '/^\\*/d' | tr '\n' '|' | sed -E 's/(\\|$|^\\|)//g' ) | less -XRF"
     branchfiles = !"git diff --name-only @ $(git merge-base @ main)"
@@ -81,6 +98,8 @@
     untrackedCache = true
     # speed up log
     commitgraph = true
+    # highlight trailing spaces in diff
+    whitespace = trailing-space
 
 [include]
     path = ~/.gitconfig_local
@@ -95,11 +114,27 @@
 [interactive]
     diffFilter = delta --color-only --side-by-side
 
+[tag]
+    sort = -version:refname
+
+[branch]
+    sort = -committerdate
+
+[column]
+    ui = auto
+
+[commit]
+    verbose = true
+
+[column]
+    ui = auto
+
 [push]
     default = simple
     # see also on-demand as an option
     # https://git-scm.com/book/en/v2/Git-Tools-Submodules#_publishing_submodules
     recurseSubmodules = check
+    autoSetupRemote = true
 
 [fetch]
     prune = true
@@ -112,6 +147,7 @@
 [transfer]
     # double check that we don't push invalid objects
     #fsckobjects = true
+
 [receive]
     # double check that data is valid when pushed here
     #fsckObjects = true
@@ -121,6 +157,10 @@
     # break https://github.com/tummychow/git-absorb/issues/81
     # https://github.com/libgit2/libgit2/issues/6531
     skipHash = false
+
+[maintenance]
+    auto = true
+    strategy = incremental
 
 [diff]
     algorithm = histogram

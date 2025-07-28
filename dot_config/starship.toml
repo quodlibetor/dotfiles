@@ -15,12 +15,22 @@ format = "$output"
 
 [time]
 disabled = false
-time_format = "%R" # Hour:Minute Format
+time_format = "%R"                                  # Hour:Minute Format
 format = '[[$time](fg:#a0a9cb bg:#1d2230)]($style)'
 
 # Disabling things
+# [aws]
+# disabled = true
 [aws]
-disabled = true
+format = '$symbol[($profile )]($style)'
+# style = 'bold #B23D2F'
+# symbol = "  "
+
+[aws.region_aliases]
+us-west-1 = 'usw1'
+us-west-2 = 'usw2'
+us-east-1 = 'use1'
+us-east-2 = 'use2'
 
 [gcloud]
 disabled = true

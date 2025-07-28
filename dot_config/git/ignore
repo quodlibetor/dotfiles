@@ -1,7 +1,9 @@
 # personal things
-/scratch
+scratch
+_scratch
 /.tool-versions
-/.mise.toml
+mise.local.toml
+bacon.toml
 # git
 .subgit
 .svn
@@ -18,6 +20,7 @@
 /runtests
 # vim
 *.swp
+.markdownlint-cli2.yaml
 #python
 .pyflymakerc
 .mypy_cache
@@ -45,7 +48,7 @@ dist/
 /.vscode
 /.idea
 
-# other ignores
+# other ignore
 /.ignore
 
 # General notes

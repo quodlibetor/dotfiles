@@ -112,6 +112,7 @@ needed_commands=(
     git-absorb
     git-delete-merged-branches
     git-delta:delta
+    git-interactive-rebase-tool
     ejoffe/tap/spr:git-spr
     jj
     jq
@@ -126,7 +127,7 @@ needed_commands=(
     shellcheck
     shfmt
     starship
-    tabiew
+    tabiew:tw
     # subversion:svn # is this still necessary?
     tmux
     tokei

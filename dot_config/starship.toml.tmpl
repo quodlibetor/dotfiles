@@ -1,0 +1,85 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+add_newline = false
+
+[directory]
+truncate_to_repo = false
+truncation_length = 15
+truncation_symbol = "…/"
+repo_root_style = "bright-green"
+
+[custom.vterm-emacs]
+command = '''printf '\e]%s\e\\' "51;A$(whoami)@$(hostname):$(pwd)"'''
+when = """test "$INSIDE_EMACS" = 'vterm' """
+format = "$output"
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+format = '[[$time](fg:#a0a9cb bg:#1d2230)]($style)'
+
+# Disabling things
+# [aws]
+# disabled = true
+[aws]
+format = '$symbol[($profile )]($style)'
+# style = 'bold #B23D2F'
+# symbol = "  "
+
+[aws.region_aliases]
+us-west-1 = 'usw1'
+us-west-2 = 'usw2'
+us-east-1 = 'use1'
+us-east-2 = 'use2'
+
+[gcloud]
+disabled = true
+
+[kubernetes]
+disabled = true
+
+[vagrant]
+disabled = true
+
+{{ if lookPath "starship-jj" -}}
+# jujutsu/jj config
+# Requires us to disable default git things, but re-enable if jj is not configured
+
+[git_branch]
+disabled = true
+
+[custom.git_branch]
+detect_folders = ["!.jj", ".git"]
+command = "starship module git_branch"
+description = "Only show git_branch if we're not in a jj repo"
+
+[git_commit]
+disabled = true
+
+[custom.git_commit]
+detect_folders = ["!.jj", ".git"]
+command = "starship module git_commit"
+description = "Only show git_commit if we're not in a jj repo"
+
+[git_status]
+disabled = true
+
+[custom.git_status]
+detect_folders = ["!.jj", ".git"]
+command = "starship module git_status"
+description = "Only show git_status if we're not in a jj repo"
+
+[git_state]
+disabled = true
+
+[custom.git_state]
+detect_folders = ["!.jj", ".git"]
+command = "starship module git_state"
+description = "Only show git_state if we're not in a jj repo"
+
+[custom.jj]
+detect_folders = [".jj"]
+command='''starship-jj --ignore-working-copy starship prompt'''
+format = "[$symbol](blue bold) $output "
+symbol = "󱗆 "
+{{ end }}

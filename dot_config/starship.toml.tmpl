@@ -80,6 +80,6 @@ description = "Only show git_state if we're not in a jj repo"
 [custom.jj]
 detect_folders = [".jj"]
 command='''starship-jj --ignore-working-copy starship prompt'''
-format = "[$symbol](blue bold) $output "
+format = "(blue bold)$output "
 symbol = "󱗆 "
 {{ end }}

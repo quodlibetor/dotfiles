@@ -1,0 +1,33 @@
+[tools]
+"go:github.com/go-delve/delve/cmd/dlv" = "1.23.1"
+"go:golang.org/x/tools/gopls" = "latest"
+"pipx:git-delete-merged-branches" = "latest"
+"pipx:ruff" = "latest"
+"ubi:aristocratos/btop" = "latest"
+"ubi:eza-community/eza" = "latest"
+"ubi:golangci/golangci-lint" = "latest"
+"ubi:jesseduffield/lazygit" = "latest"
+"ubi:jj-vcs/jj" = "latest"
+"ubi:okbob/pspg" = "latest"
+"ubi:quodlibetor/git-instafix" = "latest"
+"ubi:quodlibetor/s3glob" = "latest"
+"ubi:tummychow/git-absorb" = "latest"
+bat = "latest"
+delta = "latest"
+dust = "latest"
+fd = "latest"
+fzf = "latest"
+go = "latest"
+java = "23"
+jq = "latest"
+node = "23.1.0"
+python = "3.12"
+ripgrep = { version = "latest", exe = "rg" }
+shellcheck = "latest"
+starship = "latest"
+zoxide = "latest"
+
+[settings]
+experimental = true
+pipx_uvx = true
+go_set_gobin = true

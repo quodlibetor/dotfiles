@@ -100,39 +100,17 @@ fi
 # install targets that provide a different binary than the name of the target are "install_target:file_to_check_for"
 needed_commands=(
     angle-grinder:agrind
-    bat
-    btop
     chezmoi
     coreutils:gtr
-    dust
-    eza
-    fd
-    fzf
-    git
-    git-absorb
-    git-delete-merged-branches
-    git-delta:delta
-    git-interactive-rebase-tool
     ejoffe/tap/spr:git-spr
-    jj
-    jq
-    lazygit
+    git
+    git-interactive-rebase-tool
     lesspipe:lesspipe.sh
-    mise
     nvim
-    pspg
-    quodlibetor/tap/git-instafix:git-instafix
-    quodlibetor/tap/s3glob:s3glob
     ripgrep:rg
-    shellcheck
     shfmt
-    starship
     tabiew:tw
     # subversion:svn # is this still necessary?
-    tmux
-    tokei
-    zoxide
-    zsh
 )
 
 if [[ $OS == linux ]]; then
@@ -163,6 +141,9 @@ if [[ "${#install_cmds[@]}" -gt 0 ]]; then
 fi
 
 echo "INSTALL: finished brew install"
+
+mise install --yes --jobs 10
+mise upgrade --yes --jobs 10
 
 wait
 

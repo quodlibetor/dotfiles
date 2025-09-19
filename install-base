@@ -103,10 +103,12 @@ needed_commands=(
     chezmoi
     coreutils:gtr
     ejoffe/tap/spr:git-spr
+    mise
     git
     git-interactive-rebase-tool
     lesspipe:lesspipe.sh
     nvim
+    pspg
     ripgrep:rg
     shfmt
     tabiew:tw

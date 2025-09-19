@@ -357,6 +357,10 @@ jjab() {
     | sed -Ee 's/^_+|_+$//g' \
     | tr '[:upper:]' '[:lower:]'
   )
+  if [[ -z $newname ]]; then
+    echo "bookmark at $rev has no description"
+    return 1
+  fi
   local mark="bwm/$newname"
   jj bookmark create "$mark" -r "$rev"
 

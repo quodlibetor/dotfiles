@@ -1,5 +1,11 @@
+[settings]
+experimental = true
+pipx_uvx = true
+go_set_gobin = true
+idiomatic_version_file_enable_tools = ["java"]
+
 [tools]
-"go:github.com/go-delve/delve/cmd/dlv" = "1.23.1"
+"go:github.com/go-delve/delve/cmd/dlv" = "latest"
 "go:golang.org/x/tools/gopls" = "latest"
 "pipx:git-delete-merged-branches" = "latest"
 "pipx:ruff" = "latest"
@@ -8,9 +14,9 @@
 "ubi:golangci/golangci-lint" = "latest"
 "ubi:jesseduffield/lazygit" = "latest"
 "ubi:jj-vcs/jj" = "latest"
-"ubi:okbob/pspg" = "latest"
 "ubi:quodlibetor/git-instafix" = "latest"
 "ubi:quodlibetor/s3glob" = "latest"
+"ubi:terrastruct/d2" = "latest"
 "ubi:tummychow/git-absorb" = "latest"
 bat = "latest"
 delta = "latest"
@@ -26,8 +32,3 @@ ripgrep = { version = "latest", exe = "rg" }
 shellcheck = "latest"
 starship = "latest"
 zoxide = "latest"
-
-[settings]
-experimental = true
-pipx_uvx = true
-go_set_gobin = true

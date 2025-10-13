@@ -122,6 +122,15 @@ if [[ $OS == linux ]]; then
     needed_commands+=(watchman)
 fi
 
+# sometimes mise is curl-installed, and it's much faster than brew
+# so get its binaries first if possible.
+ran_mise=false
+if which mise >/dev/null 2>&1; then
+    mise install --yes --jobs 10
+    mise upgrade --yes --jobs 10
+    ran_mise=true
+fi
+
 install_cmds=()
 for cmd in "${needed_commands[@]}"; do
     check_cmd="$cmd"
@@ -147,15 +156,17 @@ fi
 
 echo "INSTALL: finished brew install"
 
-mise install --yes --jobs 10
-mise upgrade --yes --jobs 10
+if ! $ran_mise; then
+    mise install --yes --jobs 10
+    mise upgrade --yes --jobs 10
+fi
 
 wait
 
 if [[ -f $APT_LOG_FILE ]]; then
     echo
-    cat $APT_LOG_FILE
-    rm $APT_LOG_FILE
+    cat "$APT_LOG_FILE"
+    rm "$APT_LOG_FILE"
 else
     echo "INSTALL: no apt logs"
 fi

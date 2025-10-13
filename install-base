@@ -102,12 +102,15 @@ needed_commands=(
     angle-grinder:agrind
     chezmoi
     coreutils:gtr
+    d2
     ejoffe/tap/spr:git-spr
-    mise
     git
     git-interactive-rebase-tool
+    hl
     lesspipe:lesspipe.sh
+    mise
     nvim
+    parquet-cli:parquet
     pspg
     ripgrep:rg
     shfmt

@@ -107,7 +107,7 @@ zinit ice as"completion"
 zinit snippet https://github.com/docker/cli/blob/master/contrib/completion/zsh/_docker
 
 export FORGIT_CHECKOUT_BRANCH_BRANCH_GIT_OPTS='--sort=-committerdate'
-[[ $UNAME == Linux && $TERM == wezterm ]] && export FORGIT_COPY_CMD='wtcopy'
+[[ $UNAME == Linux && $TERM == wezterm ]] && export FORGIT_COPY_CMD="$COPY_COMMAND"
 zinit ice wait lucid cp"bin/* -> $HOME/.local/bin/git-forgit"
 zinit light wfxr/forgit
 
@@ -353,9 +353,10 @@ jjab() {
     rev="@-"
   fi
   local newname=$(jj log -r "$rev" --no-graph -n1 -T 'description.first_line()' \
-    | sed -Ee 's/[^a-zA-Z1-9]+/_/g' \
-    | sed -Ee 's/^_+|_+$//g' \
-    | tr '[:upper:]' '[:lower:]'
+    | sed -Ee 's/[^a-zA-Z1-9]+/-/g' \
+    | sed -Ee 's/^-+|-+$//g' \
+    | tr '[:upper:]' '[:lower:]' \
+    ;
   )
   if [[ -z $newname ]]; then
     echo "bookmark at $rev has no description"
@@ -399,7 +400,7 @@ jjab() {
       echo "jjab: No PR URL found"
     fi
   else
-    echo "${cmd[*]}" | wtcopy
+    echo "${cmd[*]}" | "$COPY_COMMAND"
     echo "jjab: bokmark push command is in your clipboard"
   fi
 }
@@ -414,8 +415,9 @@ gitab() {
   local newname
   newname=$(git show -s --format=%s "$rev" \
     | sed -Ee 's/[^a-zA-Z0-9]+/_/g' \
+    | sed -Ee 's/^-+|-+$//g' \
     | tr '[:upper:]' '[:lower:]' \
-    | sed -Ee 's/^_+|_+$//g'
+    ;
   )
 
   if [[ -z "$newname" ]]; then
@@ -472,7 +474,7 @@ gitab() {
   else
     # Put the push + PR command in clipboard (best-effort)
     local tocopy="git push -u origin $branch"
-    print -r -- "$tocopy" | wtcopy
+    print -r -- "$tocopy" | "$COPY_COMMAND"
     echo "gitab: branch/PR command is in your clipboard"
   fi
 }

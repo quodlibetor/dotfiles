@@ -22,6 +22,7 @@ export path=(
     /usr/local/sbin
 )
 unset extra_path pth
+rehash
 # workaround for some things, I don't remember what so leave it disabled until something breaks
 # for bindir in /opt/homebrew/opt/*/bin ; do
 #     export PATH="$PATH:${bindir}"
@@ -57,5 +58,18 @@ fi
 # this makes sudo know about wezterm capabilities
 [[ -n "$WEZTERM_EXECUTABLE" && -f "$HOME/.terminfo/w/wezterm" ]] && export TERMCAP="$HOME/.terminfo/w/wezterm"
 export COLORTERM=truecolor
+
+__bwm_no_no_copy() {
+  printf "Unable to discover a clipboard copy command in .zshenv"
+}
+
+export COPY_COMMAND="__bwm_no_copy"
+if which wtcopy >/dev/null 2>&1 ; then
+  COPY_COMMAND=wtcopy
+elif which pbcopy >/dev/null 2>&1 ; then
+  COPY_COMMAND=pbcopy
+elif which xclip >/dev/null 2>&1 ; then
+  COPY_COMMAND=xclip
+fi
 
 export GIT_INSTAFIX_UPSTREAM=origin/main

@@ -1,0 +1,54 @@
+[user]
+name = "Brandon W Maister"
+
+[ui]
+diff-editor = ":builtin"
+default-command = "lgs"
+
+[git]
+auto-local-bookmark = true
+push-new-bookmarks = true
+
+[aliases]
+lg = ["log"]
+lgs = ["log", "-n15"]
+s = ["status"]
+stat = ["diff", "--stat"]
+ab = ["util", "exec", "--", "jj-ab"]
+add-parent = ["util", "exec", "--", "bash", "-c", """
+change=$1
+new_parent=$2
+jj rebase -r "$change" -d "parents($change) | $new_parent"
+jj log -r "$change | parents($change)"
+""", "--"]
+pull = ["util", "exec", "--", "bash", "-c", "jj git fetch && jj rebase --skip-emptied -b @ -d main"]
+
+[revsets]
+log = "log"
+
+[revset-aliases]
+# from https://willhbr.net/2024/08/18/understanding-revsets-for-a-better-jj-log-output/
+log = '@ | ancestors(trunk()..(visible_heads() & mine() ~ description(regex:"spr")), 2) | trunk()'
+spr = '@ | ancestors(trunk()..(visible_heads() & mine() | description(regex:"spr")), 2) | trunk()'
+# working set of commits
+cur = 'ancestors(@) ~ ancestors(trunk())'
+# @- is hard to type, and @~ is not a legal alias, so use "p" for "parent"
+p = "@-"
+
+"active(rev)" = "(ancestors(rev) | descendants(rev)) ~ immutable()"
+work = "active(@)"
+
+[fsmonitor]
+backend = "watchman"
+
+[merge-tools.nvimdiff]
+program = "nvim"
+merge-args = ["-c", "JJdiff", "-d", "$left", "$output", "$right"]
+
+[merge-tools.diffconflicts]
+program = "nvim"
+merge-args = [
+    "-c", "let g:jj_diffconflicts_marker_length=$marker_length",
+    "-c", "JJDiffConflicts!", "$output", "$base", "$left", "$right",
+]
+merge-tool-edits-conflict-markers = true

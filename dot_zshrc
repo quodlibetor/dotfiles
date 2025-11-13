@@ -200,7 +200,7 @@ fi
 alias -r lzd='lazydocker'
 alias -r lzg='lazygit'
 alias -r ghprc='gh pr checkout'
-alias -r rg="rg --type-add 'tilt:*.tilt' --type-add 'tilt:Tiltfile' --type-add 'bazel:.bazelproject' --type-add 'bazel:.bazelrc.user'"
+alias -r rg="rg --type-add 'tilt:*.tilt' --type-add 'tilt:Tiltfile' --type-add 'bazel:.bazelproject' --type-add 'bazel:.bazelrc.user' --type-add 'bazel:*.bazel.lock'"
 alias -r tf=terraform
 alias -r ubi="ubi --in $HOME/.local/bin"
 

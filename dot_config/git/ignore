@@ -4,7 +4,7 @@ _scratch
 /.tool-versions
 mise.local.toml
 bacon.toml
-# git
+# vcs
 .subgit
 .svn
 /.jj

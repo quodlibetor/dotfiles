@@ -74,10 +74,6 @@ local function git_root_dir(tabinfo)
   return workdir
 end
 
--- local theme = "Modus Vivendi (Gogh)"
-local theme = "Modus-Vivendi"
-local remote_theme = 'Modus-Vivendi-Tinted'
-
 wezterm.on("user-var-changed", function(window, pane, name, value)
   if name == "OPEN_URL" then
     wezterm.open_with(value)
@@ -85,6 +81,34 @@ wezterm.on("user-var-changed", function(window, pane, name, value)
     window:copy_to_clipboard(value, "Clipboard")
   end
 end)
+
+-- Attempt to set color scheme based on system appearance
+--
+-- local themes = {
+--   Light = "",
+--   Dark = "Modus-Vivendi",
+-- }
+-- -- wezterm.gui is not available to the mux server, so take care to
+-- -- do something reasonable when this config is evaluated by the mux
+-- local function get_appearance()
+--   if wezterm.gui then
+--     return wezterm.gui.get_appearance()
+--   end
+--   return 'Dark'
+-- end
+--
+-- local function scheme_for_appearance(appearance)
+--   if appearance:find 'Dark' then
+--     return 'Builtin Solarized Dark'
+--   else
+--     return 'Builtin Solarized Light'
+--   end
+-- end
+--
+-- color_scheme = scheme_for_appearance(get_appearance())
+
+local theme = 'Modus-Vivendi'
+local remote_theme = 'Modus-Vivendi-Tinted'
 
 wezterm.on('window-focus-changed', function(window, pane)
   local conf = window:get_config_overrides() or {}

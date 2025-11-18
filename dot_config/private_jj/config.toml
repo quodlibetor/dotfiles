@@ -1,3 +1,5 @@
+"$schema" = "https://jj-vcs.github.io/jj/latest/config-schema.json"
+
 [user]
 name = "Brandon W Maister"
 
@@ -21,7 +23,14 @@ new_parent=$2
 jj rebase -r "$change" -d "parents($change) | $new_parent"
 jj log -r "$change | parents($change)"
 """, "--"]
-pull = ["util", "exec", "--", "bash", "-c", "jj git fetch && jj rebase --skip-emptied -b @ -d main"]
+pull = [
+  "util",
+  "exec",
+  "--",
+  "bash",
+  "-c",
+  "jj git fetch && jj rebase --skip-emptied -b @ -d main",
+]
 
 [revsets]
 log = "log"
@@ -48,7 +57,13 @@ merge-args = ["-c", "JJdiff", "-d", "$left", "$output", "$right"]
 [merge-tools.diffconflicts]
 program = "nvim"
 merge-args = [
-    "-c", "let g:jj_diffconflicts_marker_length=$marker_length",
-    "-c", "JJDiffConflicts!", "$output", "$base", "$left", "$right",
+  "-c",
+  "let g:jj_diffconflicts_marker_length=$marker_length",
+  "-c",
+  "JJDiffConflicts!",
+  "$output",
+  "$base",
+  "$left",
+  "$right",
 ]
 merge-tool-edits-conflict-markers = true

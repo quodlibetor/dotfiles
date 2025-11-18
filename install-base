@@ -102,6 +102,7 @@ needed_commands=(
     angle-grinder:agrind
     chezmoi
     coreutils:gtr
+    eza
     d2
     ejoffe/tap/spr:git-spr
     git

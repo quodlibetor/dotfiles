@@ -26,6 +26,6 @@ ${org}/{{ .name }}
 cat <(repos-in-org lacework) <(repos-in-org lacework-dev) \
     | fzf --ansi --no-multi --query "$1" \
         --header 'RET: clone selected | Ctrl-o open in web browser' \
-        --bind 'return:execute(echo "> gh repo clone {1}" && gh repo clone {1})+accept' \
-        --bind 'ctrl-o:execute(bash -c "url=https://github.com/{1} ; open  \"\$url\" || xdg-open \"\$url\" ")+accept' \
+        --bind 'return:accept+execute(echo "> gh repo clone {1}" && gh repo clone {1})' \
+        --bind 'ctrl-o:accept+execute(bash -c "url=https://github.com/{1} ; open  \"\$url\" || xdg-open \"\$url\" ")' \
     ;

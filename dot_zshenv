@@ -72,4 +72,6 @@ elif which xclip >/dev/null 2>&1 ; then
   COPY_COMMAND=xclip
 fi
 
+export RIPGREP_CONFIG_PATH="$HOME/.config/ripgreprc"
+
 export GIT_INSTAFIX_UPSTREAM=origin/main

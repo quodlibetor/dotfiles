@@ -1,0 +1,5 @@
+--type-add=tilt:Tiltfile
+--type-add=tilt:*.tilt
+--type-add=bazel:.bazelproject
+--type-add=bazel:.bazelrc.user
+--type-add=bazel:*.bazel.lock

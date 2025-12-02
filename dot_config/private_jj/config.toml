@@ -5,14 +5,14 @@ name = "Brandon W Maister"
 
 [ui]
 diff-editor = ":builtin"
-default-command = "lgs"
+default-command = "log"
 
 [git]
 auto-local-bookmark = true
 push-new-bookmarks = true
 
 [aliases]
-lg = ["log"]
+lg = ["log", "-r", "full"]
 lgs = ["log", "-n15"]
 s = ["status"]
 stat = ["diff", "--stat"]
@@ -33,11 +33,14 @@ pull = [
 ]
 
 [revsets]
-log = "log"
+log = "default"
 
 [revset-aliases]
+# default is from https://gist.github.com/guibou/0a8731e10dffe4919c987fc7bc263aea
+default = 'present(@) | ancestors(immutable_heads().., 2) | present(trunk())'
 # from https://willhbr.net/2024/08/18/understanding-revsets-for-a-better-jj-log-output/
 log = '@ | ancestors(trunk()..(visible_heads() & mine() ~ description(regex:"spr")), 2) | trunk()'
+full = '@ | ancestors(trunk()..(visible_heads() & mine() ~ description(regex:"spr"))) | trunk()'
 spr = '@ | ancestors(trunk()..(visible_heads() & mine() | description(regex:"spr")), 2) | trunk()'
 # working set of commits
 cur = 'ancestors(@) ~ ancestors(trunk())'
@@ -67,3 +70,6 @@ merge-args = [
   "$right",
 ]
 merge-tool-edits-conflict-markers = true
+
+[remotes.origin]
+auto-track-bookmarks = "glob:bwm/*"

@@ -129,6 +129,7 @@ setopt hist_ignore_all_dups   # Delete old recorded entry if new entry is a dupl
 
 (( $+commands[mise] )) && eval "$(mise activate zsh)"
 (( $+commands[zoxide] )) && eval "$(zoxide init --cmd j zsh)"
+(( $+commands[jj] )) && source <(jj util completion zsh)
 
 if (( $+commands[fzf] )) ; then
     eval "$(fzf --zsh)"
@@ -344,6 +345,7 @@ function frg {
 }
 
 alias jjab="jj ab"
+alias jjj=jjui
 
 ## git auto branch
 ##

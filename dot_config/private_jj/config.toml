@@ -5,18 +5,22 @@ name = "Brandon W Maister"
 
 [ui]
 diff-editor = ":builtin"
-default-command = "log"
+default-command = "lgs"
+revsets-use-glob-by-default = true
 
-[git]
-auto-local-bookmark = true
-push-new-bookmarks = true
+[remotes.origin]
+auto-track-bookmarks = "glob:bwm/*"
 
 [aliases]
 lg = ["log", "-r", "full"]
-lgs = ["log", "-n15"]
+lgs = ["log", "-n20"]
+# the ancestors of @ that are not in trunc()
+lgcur = ["log", "-r", "cur"]
 s = ["status"]
 stat = ["diff", "--stat"]
 ab = ["util", "exec", "--", "jj-ab"]
+# change the commit message of rhe parent commit
+reword = ["describe", "-r", "@-"]
 add-parent = ["util", "exec", "--", "bash", "-c", """
 change=$1
 new_parent=$2
@@ -33,19 +37,31 @@ pull = [
 ]
 
 [revsets]
-log = "default"
+log = "working_mine"
 
 [revset-aliases]
+# All "working" branches that include at least one of my commits
+# * immutable_heads().. -> commits that are not ancestors of any immutable head
+#   (i.e., not yet merged into trunk/tags/untracked remotes) but are ancestors of some visible head.
+# * mine() & immutable_heads().. -> my commits, only among those working changes.
+# * reachable(srcs, domain) -> walks parents and children from srcs, but stays inside domain.
+#   * So reachable(mine() & immutable_heads().., immutable_heads()..) = all commits in
+#     “working changes” that lie on any connected branch containing at least one of my commits.
+# * ancestors(my_changes, 2) -> show the change on trunk() that they diverged from
+my_branches = 'reachable(mine() & immutable_heads().., immutable_heads()..)'
+working_mine = 'ancestors(@, 2) | ancestors(my_branches, 2)'
+# Branches not merged into trunk() that contain at least one of my commits
+working_from_trunk = 'reachable(mine() ~ ::trunk(), trunk()..)'
+
 # default is from https://gist.github.com/guibou/0a8731e10dffe4919c987fc7bc263aea
 default = 'present(@) | ancestors(immutable_heads().., 2) | present(trunk())'
 # from https://willhbr.net/2024/08/18/understanding-revsets-for-a-better-jj-log-output/
 log = '@ | ancestors(trunk()..(visible_heads() & mine() ~ description(regex:"spr")), 2) | trunk()'
 full = '@ | ancestors(trunk()..(visible_heads() & mine() ~ description(regex:"spr"))) | trunk()'
 spr = '@ | ancestors(trunk()..(visible_heads() & mine() | description(regex:"spr")), 2) | trunk()'
+
 # working set of commits
 cur = 'ancestors(@) ~ ancestors(trunk())'
-# @- is hard to type, and @~ is not a legal alias, so use "p" for "parent"
-p = "@-"
 
 "active(rev)" = "(ancestors(rev) | descendants(rev)) ~ immutable()"
 work = "active(@)"
@@ -71,5 +87,3 @@ merge-args = [
 ]
 merge-tool-edits-conflict-markers = true
 
-[remotes.origin]
-auto-track-bookmarks = "glob:bwm/*"

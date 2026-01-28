@@ -76,7 +76,7 @@ elif [[ $OS == linux ]]; then
     echo "INSTALL: apt install log: $(date)" | tee $APT_LOG_FILE
 
     sudo env DEBIAN_FRONTEND=noninteractive apt-get update
-    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${install[@]}" >>$APT_LOG_FILE 2>&1 &
+    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${install[@]}" 2>&1 | tee -a "$APT_LOG_FILE"
 fi
 
 #
@@ -127,6 +127,7 @@ fi
 # so get its binaries first if possible.
 ran_mise=false
 if which mise >/dev/null 2>&1; then
+    mose self-update -y || true
     mise install --yes --jobs 10
     mise upgrade --yes --jobs 10
     ran_mise=true

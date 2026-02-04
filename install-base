@@ -25,6 +25,9 @@ fi
 # Install system packages
 #
 
+# Configure PATH in particular
+. "$(dirname ${BASH_SOURCE[0]})/dot_zshenv"
+
 APT_LOG_FILE=$(mktemp chezmoi-apt-log.XXXXXXXXXX)
 
 if [[ $OS == darwin ]]; then
@@ -64,19 +67,23 @@ elif [[ $OS == linux ]]; then
 
     install=()
 
-    runv curl -fL https://github.com/wez/wezterm/releases/download/nightly/wezterm-nightly.Ubuntu22.04.deb -o /tmp/wezterm-nightly.deb || true
+    if ! which wezterm >/dev/null 2>&1 ; then
+        runv curl -fL https://github.com/wez/wezterm/releases/download/nightly/wezterm-nightly.Ubuntu22.04.deb -o /tmp/wezterm-nightly.deb || true
 
-    if [[ -f /tmp/wezterm-nightly.deb ]]; then
-        install+=(/tmp/wezterm-nightly.deb)
-    else
-        echo "Failed to download wezterm-nightly.deb"
+        if [[ -f /tmp/wezterm-nightly.deb ]]; then
+            install+=(/tmp/wezterm-nightly.deb)
+        else
+            echo "Failed to download wezterm-nightly.deb"
+        fi
     fi
-    [[ -f "$HOME/emacs-desired-runtime-deps.list" ]] && install+=($(cat "$HOME/emacs-desired-runtime-deps.list"))
+    # [[ -f "$HOME/emacs-desired-runtime-deps.list" ]] && install+=($(cat "$HOME/emacs-desired-runtime-deps.list"))
 
-    echo "INSTALL: apt install log: $(date)" | tee $APT_LOG_FILE
+    echo "INSTALL: apt install log: $(date)" | tee "$APT_LOG_FILE"
 
-    sudo env DEBIAN_FRONTEND=noninteractive apt-get update
-    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${install[@]}" 2>&1 | tee -a "$APT_LOG_FILE"
+    if [[ "${#install[@]}" -gt 0 ]]; then
+      sudo env DEBIAN_FRONTEND=noninteractive apt-get update
+      sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${install[@]}" 2>&1 | tee -a "$APT_LOG_FILE"
+    fi
 fi
 
 #
@@ -106,7 +113,7 @@ needed_commands=(
     d2
     ejoffe/tap/spr:git-spr
     git
-    git-interactive-rebase-tool
+    git-interactive-rebase-tool:interactive-rebase-tool
     hl
     lesspipe:lesspipe.sh
     mise
@@ -127,7 +134,7 @@ fi
 # so get its binaries first if possible.
 ran_mise=false
 if which mise >/dev/null 2>&1; then
-    mose self-update -y || true
+    mise self-update -y || true
     mise install --yes --jobs 10
     mise upgrade --yes --jobs 10
     ran_mise=true
@@ -154,9 +161,10 @@ if [[ "${#install_cmds[@]}" -gt 0 ]]; then
     # brew will sometimes fail to clean up on linux because of too many open files,
     # it's still installed everything, so continue anyway
     runv "$brewcmd" install "${install_cmds[@]}" || true
+    echo "INSTALL: finished brew install"
+else
+    echo "INSTALL: no items to install from brew"
 fi
-
-echo "INSTALL: finished brew install"
 
 if ! $ran_mise; then
     mise install --yes --jobs 10

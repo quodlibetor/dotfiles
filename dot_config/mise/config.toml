@@ -28,6 +28,7 @@ java = "17"
 jj = "latest"
 jjui = "latest"
 jq = "latest"
+k9s = "latest"
 node = "23.1.0"
 python = "3.14"
 ripgrep = { version = "latest", exe = "rg" }

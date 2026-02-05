@@ -33,7 +33,7 @@ pull = [
   "--",
   "bash",
   "-c",
-  "jj git fetch && jj rebase --skip-emptied -b @ -d main",
+  "jj git fetch && jj rebase --skip-emptied -b @ -d main@origin",
 ]
 
 [revsets]

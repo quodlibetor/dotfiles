@@ -62,7 +62,7 @@ fi
 __cmd_exists pspg && PSQL_PAGER='pspg --reprint-on-exit'
 
 # this makes sudo know about wezterm capabilities
-[[ -n "$WEZTERM_EXECUTABLE" && -f "$HOME/.terminfo/w/wezterm" ]] && export TERMCAP="$HOME/.terminfo/w/wezterm"
+[[ -n "${WEZTERM_EXECUTABLE:-}" && -f "$HOME/.terminfo/w/wezterm" ]] && export TERMCAP="$HOME/.terminfo/w/wezterm"
 export COLORTERM=truecolor
 
 __bwm_no_no_copy() {

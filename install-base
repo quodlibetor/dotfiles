@@ -68,17 +68,20 @@ elif [[ $OS == linux ]]; then
     install=()
 
     if ! which wezterm >/dev/null 2>&1 ; then
-        runv curl -fL https://github.com/wez/wezterm/releases/download/nightly/wezterm-nightly.Ubuntu22.04.deb -o /tmp/wezterm-nightly.deb || true
 
+        runv curl -fL https://github.com/wez/wezterm/releases/download/nightly/wezterm-nightly.Ubuntu22.04.deb -o /tmp/wezterm-nightly.deb || true
         if [[ -f /tmp/wezterm-nightly.deb ]]; then
             install+=(/tmp/wezterm-nightly.deb)
         else
             echo "Failed to download wezterm-nightly.deb"
         fi
+    else
+        echo "wezterm already installed"
     fi
     # [[ -f "$HOME/emacs-desired-runtime-deps.list" ]] && install+=($(cat "$HOME/emacs-desired-runtime-deps.list"))
 
     echo "INSTALL: apt install log: $(date)" | tee "$APT_LOG_FILE"
+    echo "INSTALL: apt-get install -y ${install[*]}" | tee -a "$APT_LOG_FILE"
 
     if [[ "${#install[@]}" -gt 0 ]]; then
       sudo env DEBIAN_FRONTEND=noninteractive apt-get update

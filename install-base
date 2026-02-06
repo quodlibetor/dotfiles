@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -x
 
 runv() {
     printf '>'
@@ -26,9 +26,9 @@ fi
 #
 
 # Configure PATH in particular
-. "$(dirname ${BASH_SOURCE[0]})/dot_zshenv"
+. "$(dirname "${BASH_SOURCE[0]}")/dot_zshenv"
 
-APT_LOG_FILE=$(mktemp chezmoi-apt-log.XXXXXXXXXX)
+APT_LOG_FILE=$(mktemp "chezmoi-apt-log.$(date +"%Y%m%dT%H%M%S").XXXXXXXXXX")
 
 if [[ $OS == darwin ]]; then
     # to upgrade wezterm:
@@ -68,7 +68,7 @@ elif [[ $OS == linux ]]; then
     install=()
 
     if ! which wezterm >/dev/null 2>&1 ; then
-
+        echo "installing wezterm"
         runv curl -fL https://github.com/wez/wezterm/releases/download/nightly/wezterm-nightly.Ubuntu22.04.deb -o /tmp/wezterm-nightly.deb || true
         if [[ -f /tmp/wezterm-nightly.deb ]]; then
             install+=(/tmp/wezterm-nightly.deb)

@@ -28,7 +28,7 @@ if [[ -z $rev ]]; then
   rev="@-"
 fi
 local newname=$(jj log -r "$rev" --no-graph -n1 -T 'description.first_line()' \
-  | sed -Ee 's/[^a-zA-Z1-9]+/-/g' \
+  | sed -Ee 's/[^a-zA-Z0-9]+/-/g' \
   | sed -Ee 's/^-+|-+$//g' \
   | tr '[:upper:]' '[:lower:]' \
   ;
@@ -41,41 +41,13 @@ local mark="bwm/$newname"
 jj bookmark create "$mark" -r "$rev"
 
 local cmd=(jj git push --allow-new -b $mark)
-local oldhist=""
-local resethist=false
-if [[ -n "${ZSH_AUTOSUGGEST_HISTORY_IGNORE:-}" ]]; then
-  oldhist="${ZSH_AUTOSUGGEST_HISTORY_IGNORE}"
-  resethist=true
-fi
-
-ZSH_AUTOSUGGEST_HISTORY_IGNORE=*
-
-local doit
-vared \
-  -p "jjab: push new bookmark to forge? [y/N] " \
-  -r "${cmd[*]}" \
-  doit
-
-if $resethist ; then
-  ZSH_AUTOSUGGEST_HISTORY_IGNORE="$oldhist"
+echo "> ${cmd[*]}"
+local outfile=$(mktemp --tmpdir jjab.out.XXXXXXXXXX)
+${cmd[@]} 2>&1 | tee "$outfile"
+local pr_url=$(grep -Eo 'https://github.com/.*pull/new[^ ]*' "$outfile")
+rm "$outfile"
+if [[ -n "$pr_url" ]]; then
+  python3 -m webbrowser "$pr_url"
 else
-  unset ZSH_AUTOSUGGEST_HISTORY_IGNORE
+  echo "jjab: No PR URL found"
 fi
-
-if [[ $doit =~ ^y ]]; then
-  echo "> ${cmd[*]}"
-  local outfile=$(mktemp --tmpdir jjab.out.XXXXXXXXXX)
-  ${cmd[@]} > $outfile 2>&1
-  cat $outfile
-  local pr_url=$(grep -Eo 'https://github.com/.*pull/new[^ ]*' $outfile)
-  rm "$outfile"
-  if [[ -n "$pr_url" ]]; then
-    python3 -m webbrowser "$pr_url"
-  else
-    echo "jjab: No PR URL found"
-  fi
-else
-  echo "${cmd[*]}" | "$COPY_COMMAND"
-  echo "jjab: bokmark push command is in your clipboard"
-fi
-

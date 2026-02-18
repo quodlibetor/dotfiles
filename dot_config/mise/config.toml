@@ -10,6 +10,7 @@ idiomatic_version_file_enable_tools = ["java"]
 "pipx:git-delete-merged-branches" = "latest"
 "pipx:ruff" = "latest"
 "github:aristocratos/btop" = "latest"
+"github:eza-community/eza" = "latest"
 "github:golangci/golangci-lint" = "latest"
 "github:jesseduffield/lazygit" = "latest"
 "github:jj-vcs/jj" = "latest"

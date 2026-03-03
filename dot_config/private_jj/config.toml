@@ -19,6 +19,8 @@ lgcur = ["log", "-r", "cur"]
 s = ["status"]
 stat = ["diff", "--stat"]
 ab = ["util", "exec", "--", "jj-ab"]
+# similar to git diff --cached, old alias from svn index
+ix = ["diff", "-r", "@-"]
 # change the commit message of rhe parent commit
 reword = ["describe", "-r", "@-"]
 add-parent = ["util", "exec", "--", "bash", "-c", """

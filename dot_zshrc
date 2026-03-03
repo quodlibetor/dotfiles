@@ -227,6 +227,10 @@ export TIME="$TIMEFMT"
 
 REPO_DIR="$HOME/repos"
 
+for f in ~/.config/zsh/*.zsh; do
+    source "$f"
+done
+
 psgrep() {
     ps -eo 'pid ppid %cpu %mem etime args' \
       | rg --color=always "(PID|$1)" \

@@ -81,5 +81,6 @@ fi
 export RIPGREP_CONFIG_PATH="$HOME/.config/ripgreprc"
 
 export GIT_INSTAFIX_UPSTREAM=origin/main
+export GOENV_DISABLE_PATH_WARNING=1
 
 unset __cmd_exists

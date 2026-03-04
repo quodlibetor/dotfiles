@@ -26,7 +26,7 @@ reword = ["describe", "-r", "@-"]
 add-parent = ["util", "exec", "--", "bash", "-c", """
 change=$1
 new_parent=$2
-jj rebase -r "$change" -d "parents($change) | $new_parent"
+jj rebase --simplify-parents -b "$change" -d "parents($change) | $new_parent"
 jj log -r "$change | parents($change)"
 """, "--"]
 pull = [
@@ -35,7 +35,7 @@ pull = [
   "--",
   "bash",
   "-c",
-  "jj git fetch && jj rebase --skip-emptied -b @ -d main@origin",
+  "jj git fetch && jj rebase --skip-emptied --simplify-parents -b @ -d main@origin",
 ]
 
 [revsets]
@@ -88,4 +88,3 @@ merge-args = [
   "$right",
 ]
 merge-tool-edits-conflict-markers = true
-

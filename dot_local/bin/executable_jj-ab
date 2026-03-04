@@ -24,6 +24,13 @@ done
 
 
 local rev="$1"
+if [[ $rev == "-r" ]]; then
+  rev=$2
+  if [[ -z "$rev" ]]; then
+    echo "-r requires an argument"
+    exit 1
+  fi
+fi
 if [[ -z $rev ]]; then
   rev="@-"
 fi
@@ -40,7 +47,7 @@ fi
 local mark="bwm/$newname"
 jj bookmark create "$mark" -r "$rev"
 
-local cmd=(jj git push --allow-new -b $mark)
+local cmd=(jj git push -b $mark)
 echo "> ${cmd[*]}"
 local outfile=$(mktemp --tmpdir jjab.out.XXXXXXXXXX)
 ${cmd[@]} 2>&1 | tee "$outfile"

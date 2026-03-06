@@ -1,0 +1,122 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#   "rich",
+# ]
+# ///
+
+"""
+Accept json and pretty print it
+
+Entirely ai generated.
+"""
+
+import json
+import sys
+import os
+import re
+import termios
+import tty
+from datetime import datetime
+from rich.console import Console
+from rich.syntax import Syntax
+
+def get_cursor_row():
+    try:
+        with open("/dev/tty", "r+b", buffering=0) as t:
+            old = termios.tcgetattr(t)
+            try:
+                tty.setraw(t)
+                t.write(b"\033[6n")
+                t.flush()
+                response = b""
+                while True:
+                    ch = t.read(1)
+                    response += ch
+                    if ch == b"R":
+                        break
+            finally:
+                termios.tcsetattr(t, termios.TCSADRAIN, old)
+        m = re.search(rb'\[(\d+);(\d+)R', response)
+        if m:
+            return int(m.group(1))
+    except Exception:
+        pass
+    return None
+
+def try_parse(text):
+    text = text.strip()
+
+    # Try raw JSON first
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Try as an escaped JSON string (strip surrounding quotes if present, then decode)
+    candidate = text
+    if (candidate.startswith('"') and candidate.endswith('"')) or \
+       (candidate.startswith("'") and candidate.endswith("'")):
+        candidate = candidate[1:-1]
+
+    # Decode escape sequences
+    try:
+        unescaped = candidate.encode('raw_unicode_escape').decode('unicode_escape')
+        return json.loads(unescaped)
+    except Exception:
+        pass
+
+    # Try without stripping quotes (in case it's an escaped string without outer quotes)
+    try:
+        unescaped = text.encode('raw_unicode_escape').decode('unicode_escape')
+        return json.loads(unescaped)
+    except Exception:
+        pass
+
+    return None
+
+def main():
+    stderr = Console(stderr=True)
+    start_row = get_cursor_row()
+    stderr.print("Paste your JSON below (raw or escaped string).")
+    stderr.print("When done, press [bold]Ctrl+D[/bold] on a new line:\n")
+
+    try:
+        raw = sys.stdin.read()
+    except KeyboardInterrupt:
+        stderr.print("\nAborted.")
+        sys.exit(1)
+
+    parsed = try_parse(raw)
+
+    if parsed is None:
+        stderr.print("[bold red]Error:[/bold red] could not parse input as JSON or escaped JSON string.")
+        sys.exit(1)
+
+    formatted = json.dumps(parsed, indent=2, ensure_ascii=False)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    out_path = f"/tmp/jsonfix_{timestamp}.json"
+
+    with open(out_path, "w") as f:
+        f.write(formatted + "\n")
+
+    # Move back to where we started and clear everything from there down
+    if start_row is not None:
+        os.write(sys.stderr.fileno(), f"\033[{start_row};1H\033[J".encode())
+
+    syntax = Syntax(formatted, "json", theme="monokai", line_numbers=True)
+
+    import subprocess
+    console = Console(force_terminal=True, width=os.get_terminal_size().columns)
+    with console.capture() as capture:
+        console.print(f"[dim]Saved to {out_path}[/dim]\n")
+        console.print(syntax)
+
+    subprocess.run(["less", "-R"], input=capture.get(), text=True)
+
+    Console().print(f"[dim]Saved to {out_path}[/dim]")
+
+if __name__ == "__main__":
+    main()

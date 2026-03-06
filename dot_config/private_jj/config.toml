@@ -14,6 +14,9 @@ auto-track-bookmarks = "glob:bwm/*"
 [aliases]
 lg = ["log", "-r", "full"]
 lgs = ["log", "-n20"]
+tug = ["bookmark", "advance"]
+tug- = ["bookmark", "advance", "--to", "@-"]
+
 # the ancestors of @ that are not in trunc()
 lgcur = ["log", "-r", "cur"]
 s = ["status"]

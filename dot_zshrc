@@ -173,6 +173,17 @@ if [[ -n "${WEZTERM_PANE}" ]]; then
   precmd_functions+=(__git_precmd)
 fi
 
+_vcs_status_precmd() {
+  local cwd="${PWD:A}"
+  local cache="/tmp/vcs-status-daemon-$USER/cache/${cwd//\//%}"
+  if [[ -f "$cache" ]]; then
+    export VCS_STATUS="$(<"$cache")"
+  else
+    export VCS_STATUS="$(vcs-status-daemon)"
+  fi
+}
+precmd_functions+=(_vcs_status_precmd)
+
 (( $+commands[starship] )) && eval "$(starship init zsh)"
 
 # End Prompt

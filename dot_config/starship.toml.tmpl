@@ -41,7 +41,23 @@ disabled = true
 [vagrant]
 disabled = true
 
-{{ if lookPath "starship-jj" -}}
+{{ if lookPath "vcs-status-daemon" -}}
+[git_branch]
+disabled = true
+
+[git_commit]
+disabled = true
+
+[git_status]
+disabled = true
+
+[git_state]
+disabled = true
+
+[env_var.VCS_STATUS]
+format = "$env_value "
+
+{{- else if lookPath "starship-jj" -}}
 # jujutsu/jj config
 # Requires us to disable default git things, but re-enable if jj is not configured
 

@@ -2,6 +2,33 @@
 
 set -euo pipefail
 
+if [[ "${1:-}" =~ -h ]]; then
+    echo "Usage: $(basename $0)
+
+Force-push all branches in the current stack to origin.
+
+Unlike 'git push', which pushes a single branch, this command discovers every
+branch in your current PR stack (all branches that share history since the
+merge-base with origin/main) and offers to force-push them all at once using
+--force-with-lease.
+
+You will be prompted before anything is pushed:
+  y - push all branches
+  s - choose which branches to push interactively
+  N - abort
+
+Example: if your stack looks like:
+
+  *  44444  me/finish-ui    code review
+  *  33333                  finish the ui
+  *  22222  me/do-backend * respond to code review
+  *  11111                  write the backend
+
+Running $(basename $0) will offer to push both me/do-backend and me/finish-ui.
+"
+    exit
+fi
+
 pushstack() {
     current_branch=$(git rev-parse --abbrev-ref HEAD)
     merge_base=$(git merge-base origin/main $current_branch)

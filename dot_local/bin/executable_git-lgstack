@@ -2,6 +2,30 @@
 
 set -euo pipefail
 
+if [[ "${1:-}" =~ -h ]]; then
+    echo "Usage: $(basename $0)
+
+Show the log for all branches in the current stack.
+
+Unlike 'git log', which shows history for a single ref, this command finds
+every branch in your PR stack (all branches sharing history since the
+merge-base with origin/main) and passes them all to 'git lgs' so you can
+see the full stack at a glance.
+
+Example: if your stack looks like:
+
+  *  44444  me/finish-ui    code review
+  *  33333                  finish the ui
+  *  22222  me/do-backend * respond to code review
+  *  11111                  write the backend
+
+Running $(basename $0) from any branch in the stack will show the log for
+both me/do-backend and me/finish-ui together, rather than just the current
+branch.
+"
+    exit
+fi
+
 original_branch=$(git rev-parse --abbrev-ref HEAD)
 merge_base=$(git merge-base $original_branch origin/main)
 first_commit_after_merge_base=$(git log $merge_base..$original_branch --format="%H" | tail -1)

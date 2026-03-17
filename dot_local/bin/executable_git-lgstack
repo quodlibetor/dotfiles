@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-if [[ "${1:-}" =~ -h ]]; then
-    echo "Usage: $(basename $0)
+if [[ "${*:-}" =~ -h ]]; then
+    echo "Usage: $(basename "$0")
 
 Show the log for all branches in the current stack.
 
@@ -19,7 +19,7 @@ Example: if your stack looks like:
   *  22222  me/do-backend * respond to code review
   *  11111                  write the backend
 
-Running $(basename $0) from any branch in the stack will show the log for
+Running $(basename "$0") from any branch in the stack will show the log for
 both me/do-backend and me/finish-ui together, rather than just the current
 branch.
 "

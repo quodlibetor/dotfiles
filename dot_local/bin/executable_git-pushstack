@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-if [[ "${1:-}" =~ -h ]]; then
-    echo "Usage: $(basename $0)
+if [[ "${*:-}" =~ -h ]]; then
+    echo "Usage: $(basename "$0")
 
 Force-push all branches in the current stack to origin.
 
@@ -24,7 +24,7 @@ Example: if your stack looks like:
   *  22222  me/do-backend * respond to code review
   *  11111                  write the backend
 
-Running $(basename $0) will offer to push both me/do-backend and me/finish-ui.
+Running $(basename "$0") will offer to push both me/do-backend and me/finish-ui.
 "
     exit
 fi

@@ -36,3 +36,4 @@ ripgrep = { version = "latest", exe = "rg" }
 shellcheck = "latest"
 starship = "latest"
 zoxide = "latest"
+"github:quodlibetor/vcs-status-daemon" = "latest"

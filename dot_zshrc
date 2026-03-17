@@ -179,7 +179,7 @@ _vcs_status_precmd() {
   if [[ -f "$cache" ]]; then
     export VCS_STATUS="$(<"$cache")"
   else
-    export VCS_STATUS="$(vcs-status-daemon)"
+    export VCS_STATUS="$(timeout 1 vcs-status-daemon)"
   fi
 }
 precmd_functions+=(_vcs_status_precmd)

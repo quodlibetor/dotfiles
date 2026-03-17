@@ -16,6 +16,8 @@ import json
 import sys
 import os
 import re
+import subprocess
+import tempfile
 import termios
 import tty
 from datetime import datetime
@@ -46,13 +48,14 @@ def get_cursor_row():
     return None
 
 def try_parse(text):
+    """Returns (parsed, error_string). On success error_string is None."""
     text = text.strip()
 
     # Try raw JSON first
     try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        pass
+        return json.loads(text), None
+    except json.JSONDecodeError as e:
+        raw_error = e  # keep the best error from the raw attempt
 
     # Try as an escaped JSON string (strip surrounding quotes if present, then decode)
     candidate = text
@@ -60,21 +63,28 @@ def try_parse(text):
        (candidate.startswith("'") and candidate.endswith("'")):
         candidate = candidate[1:-1]
 
-    # Decode escape sequences
-    try:
-        unescaped = candidate.encode('raw_unicode_escape').decode('unicode_escape')
-        return json.loads(unescaped)
-    except Exception:
-        pass
+    for s in (candidate, text):
+        try:
+            unescaped = s.encode('raw_unicode_escape').decode('unicode_escape')
+            return json.loads(unescaped), None
+        except Exception:
+            pass
 
-    # Try without stripping quotes (in case it's an escaped string without outer quotes)
-    try:
-        unescaped = text.encode('raw_unicode_escape').decode('unicode_escape')
-        return json.loads(unescaped)
-    except Exception:
-        pass
-
-    return None
+    # Build a useful error from the raw parse attempt
+    e = raw_error
+    doc = e.doc
+    pos = e.pos
+    snippet_start = max(0, pos - 20)
+    snippet_end = min(len(doc), pos + 20)
+    snippet = repr(doc[snippet_start:snippet_end])
+    caret_offset = pos - snippet_start
+    error_msg = (
+        f"[bold red]JSON parse error:[/bold red] {e.msg} "
+        f"at line [bold]{e.lineno}[/bold], col [bold]{e.colno}[/bold] (char {pos})\n"
+        f"  {snippet}\n"
+        f"  {' ' * (caret_offset + 1)}[bold red]^[/bold red]"
+    )
+    return None, error_msg
 
 def main():
     stderr = Console(stderr=True)
@@ -88,11 +98,29 @@ def main():
         stderr.print("\nAborted.")
         sys.exit(1)
 
-    parsed = try_parse(raw)
+    parsed, error_msg = try_parse(raw)
 
     if parsed is None:
-        stderr.print("[bold red]Error:[/bold red] could not parse input as JSON or escaped JSON string.")
-        sys.exit(1)
+        stderr.print(error_msg)
+        editor = os.environ.get("EDITOR", "vi")
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tf:
+            tmp_path = tf.name
+            tf.write(raw)
+        while parsed is None:
+            stderr.print(f"\nOpen in [bold]{editor}[/bold] to fix? \\[y/N] ", end="")
+            try:
+                answer = open("/dev/tty").readline().strip().lower()
+            except Exception:
+                answer = ""
+            if answer != "y":
+                os.unlink(tmp_path)
+                sys.exit(1)
+            subprocess.run([editor, tmp_path])
+            raw = open(tmp_path).read()
+            parsed, error_msg = try_parse(raw)
+            if parsed is None:
+                stderr.print(error_msg)
+        os.unlink(tmp_path)
 
     formatted = json.dumps(parsed, indent=2, ensure_ascii=False)
 
@@ -108,7 +136,6 @@ def main():
 
     syntax = Syntax(formatted, "json", theme="monokai", line_numbers=True)
 
-    import subprocess
     console = Console(force_terminal=True, width=os.get_terminal_size().columns)
     with console.capture() as capture:
         console.print(f"[dim]Saved to {out_path}[/dim]\n")

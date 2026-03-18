@@ -10,6 +10,13 @@ a common point).
 
 ## Install
 
+Copy and paste the `executable_git-*stack` scripts somewhere in your PATH, or
+use brew.
+
+> [!WARNING]
+> This is just some scripts in my dotfiles repo. I make no promises whatsoever
+> about their reliability or presence. This is provided to be friendly.
+
 ```
 brew tap quodlibetor/tap
 brew install --head quodlibetor/tap/git-stack

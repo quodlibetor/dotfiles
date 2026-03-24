@@ -24,6 +24,7 @@ stat = ["diff", "--stat"]
 ab = ["util", "exec", "--", "jj-ab"]
 # similar to git diff --cached, old alias from svn index
 ix = ["diff", "-r", "@-"]
+amend = ["describe", "-r", "@-"]
 # change the commit message of rhe parent commit
 reword = ["describe", "-r", "@-"]
 add-parent = ["util", "exec", "--", "bash", "-c", """
@@ -43,6 +44,9 @@ pull = [
 
 [revsets]
 log = "working_mine"
+
+[templates]
+draft_commit_description = "builtin_draft_commit_description_with_diff"
 
 [revset-aliases]
 # All "working" branches that include at least one of my commits

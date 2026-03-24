@@ -34,18 +34,30 @@ fi
 if [[ -z $rev ]]; then
   rev="@-"
 fi
-local newname=$(jj log -r "$rev" --no-graph -n1 -T 'description.first_line()' \
-  | sed -Ee 's/[^a-zA-Z0-9]+/-/g' \
-  | sed -Ee 's/^-+|-+$//g' \
-  | tr '[:upper:]' '[:lower:]' \
-  ;
-)
-if [[ -z $newname ]]; then
-  echo "bookmark at $rev has no description"
-  return 1
+local default_bookmark=$(jj config get 'revset-aliases."trunk()"' 2>/dev/null \
+  | grep -oP '[\w/-]+(?=@)' || echo "main")
+local existing_bookmark=$(jj log -r "$rev" --no-graph -n1 -T 'bookmarks.join("\n")' \
+  | grep -v "^${default_bookmark}$" \
+  | head -n1)
+
+local mark
+if [[ -n "$existing_bookmark" ]]; then
+  mark="$existing_bookmark"
+  echo "jjab: using existing bookmark '$mark'"
+else
+  local newname=$(jj log -r "$rev" --no-graph -n1 -T 'description.first_line()' \
+    | sed -Ee 's/[^a-zA-Z0-9]+/-/g' \
+    | sed -Ee 's/^-+|-+$//g' \
+    | tr '[:upper:]' '[:lower:]' \
+    ;
+  )
+  if [[ -z $newname ]]; then
+    echo "bookmark at $rev has no description"
+    return 1
+  fi
+  mark="bwm/$newname"
+  jj bookmark create "$mark" -r "$rev"
 fi
-local mark="bwm/$newname"
-jj bookmark create "$mark" -r "$rev"
 
 local cmd=(jj git push -b $mark)
 echo "> ${cmd[*]}"

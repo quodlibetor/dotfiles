@@ -18,6 +18,17 @@ disabled = false
 time_format = "%R" # Hour:Minute Format
 format = '[[$time](fg:#a0a9cb bg:#1d2230)]($style)'
 
+{{ if (eq .chezmoi.username "coder") -}}
+[nodejs]
+disabled = true
+[java]
+disabled = true
+[golang]
+disabled = true
+[python]
+disabled = true
+{{- end }}
+
 # Disabling things
 # [aws]
 # disabled = true
@@ -57,5 +68,5 @@ disabled = true
 disabled = true
 
 [env_var.VCS_STATUS]
-format = "$env_value"
+format = "$env_value "
 {{- end }}

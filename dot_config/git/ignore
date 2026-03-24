@@ -63,3 +63,5 @@ dist/
 CLAUDE.md
 CLAUDE.local.md
 .claude/*
+
+**/.claude/settings.local.json

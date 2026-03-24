@@ -71,8 +71,13 @@ autoload -Uz _zinit
 
 ### End of Zinit's installer chunk
 
-zinit ice wait lucid
-zinit light zdharma/fast-syntax-highlighting
+if (( $+commands[zsh-patina] )); then
+  eval "$(zsh-patina activate)"
+else
+  zinit ice wait lucid
+  zinit light zdharma/fast-syntax-highlighting
+fi
+
 # TAB COMPLETIONS
 zinit ice wait"0b" lucid blockf
 zinit light zsh-users/zsh-completions
@@ -173,17 +178,7 @@ if [[ -n "${WEZTERM_PANE}" ]]; then
   precmd_functions+=(__git_precmd)
 fi
 
-_vcs_status_precmd() {
-  local cwd="${PWD:A}"
-  local cache="/tmp/vcs-status-daemon-$USER/cache/${cwd//\//%}"
-  if [[ -f "$cache" ]]; then
-    export VCS_STATUS="$(<"$cache")"
-  else
-    export VCS_STATUS="$(timeout 1 vcs-status-daemon)"
-  fi
-}
-precmd_functions+=(_vcs_status_precmd)
-
+(( $+commands[vcs-status-daemon] )) && eval "$(vcs-status-daemon init zsh)"
 (( $+commands[starship] )) && eval "$(starship init zsh)"
 
 # End Prompt

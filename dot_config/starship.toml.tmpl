@@ -55,47 +55,5 @@ disabled = true
 disabled = true
 
 [env_var.VCS_STATUS]
-format = "$env_value "
-
-{{- else if lookPath "starship-jj" -}}
-# jujutsu/jj config
-# Requires us to disable default git things, but re-enable if jj is not configured
-
-[git_branch]
-disabled = true
-
-[custom.git_branch]
-detect_folders = ["!.jj", ".git"]
-command = "starship module git_branch"
-description = "Only show git_branch if we're not in a jj repo"
-
-[git_commit]
-disabled = true
-
-[custom.git_commit]
-detect_folders = ["!.jj", ".git"]
-command = "starship module git_commit"
-description = "Only show git_commit if we're not in a jj repo"
-
-[git_status]
-disabled = true
-
-[custom.git_status]
-detect_folders = ["!.jj", ".git"]
-command = "starship module git_status"
-description = "Only show git_status if we're not in a jj repo"
-
-[git_state]
-disabled = true
-
-[custom.git_state]
-detect_folders = ["!.jj", ".git"]
-command = "starship module git_state"
-description = "Only show git_state if we're not in a jj repo"
-
-[custom.jj]
-detect_folders = [".jj"]
-command='''starship-jj --ignore-working-copy starship prompt'''
-format = "(blue bold)$output "
-symbol = "󱗆 "
-{{ end }}
+format = "$env_value"
+{{- end }}

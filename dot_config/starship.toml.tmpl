@@ -8,10 +8,10 @@ truncation_length = 15
 truncation_symbol = "…/"
 repo_root_style = "bright-green"
 
-[custom.vterm-emacs]
-command = '''printf '\e]%s\e\\' "51;A$(whoami)@$(hostname):$(pwd)"'''
-when = """test "$INSIDE_EMACS" = 'vterm' """
-format = "$output"
+# [custom.vterm-emacs]
+# command = '''printf '\e]%s\e\\' "51;A$(whoami)@$(hostname):$(pwd)"'''
+# when = """test "$INSIDE_EMACS" = 'vterm' """
+# format = "$output"
 
 [time]
 disabled = false
@@ -42,6 +42,8 @@ disabled = true
 disabled = true
 
 {{ if lookPath "vcs-status-daemon" -}}
+# disable all git status parts, the entire vcs status gets preformatted into
+# VCS_STATUS_DAEMON
 [git_branch]
 disabled = true
 

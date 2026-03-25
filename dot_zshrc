@@ -13,6 +13,9 @@ setopt extendedglob notify
 unsetopt nomatch
 bindkey -e
 
+# Controls which non-letters *are* considered words for jumping (opt+b, opt+f, etc)
+WORDCHARS='-_'
+
 # COMPINSTALL
 zstyle :compinstall filename '/Users/bwm/.zshrc'
 
@@ -28,6 +31,7 @@ if (( $+commands[brew] )) ; then
 fi
 
 fpath=($fpath $HOME/.local/zsh-completions $HOME/.zplugin/completions)
+zmodload -i zsh/complist
 autoload -Uz compinit
 autoload -U bashcompinit
 compinit
@@ -98,9 +102,17 @@ zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 zinit ice wait lucid atload'_zsh_autosuggest_start'
 zinit light zsh-users/zsh-autosuggestions
 
-(( $+commands[uv] )) && ! typeset -f _uv >/dev/null 2>&1 && eval "$(uv generate-shell-completion zsh)"
-(( $+commands[uvx] )) && ! typeset -f _uvx >/dev/null 2>&1 && eval "$(uvx --generate-shell-completion zsh)"
-(( $+commands[ruff] )) && eval "$(ruff generate-shell-completion zsh)"
+zinit ice wait lucid has"uv" id-as"uv-comp" as"null" \
+  atload'eval "$(uv generate-shell-completion zsh)"'
+zinit light zdharma-continuum/null
+
+zinit ice wait lucid has"uvx" id-as"uvx-comp" as"null" \
+  atload'eval "$(uvx --generate-shell-completion zsh)"'
+zinit light zdharma-continuum/null
+
+zinit ice wait lucid has"ruff" id-as"ruff-comp" as"null" \
+  atload'eval "$(ruff generate-shell-completion zsh)"'
+zinit light zdharma-continuum/null
 
 # inshellisense contradicts zsh-autosuggestions
 #[ -f ~/.inshellisense/key-bindings.zsh ] && source ~/.inshellisense/key-bindings.zsh
@@ -130,15 +142,20 @@ setopt hist_ignore_all_dups   # Delete old recorded entry if new entry is a dupl
 # Extra commands
 
 (( $+commands[mise] )) && eval "$(mise activate zsh)"
-(( $+commands[zoxide] )) && eval "$(zoxide init --cmd j zsh)"
-(( $+commands[jj] )) && source <(COMPLETE=zsh jj)
+zinit ice wait lucid has"zoxide" id-as"zoxide-init" as"null" \
+  atload'eval "$(zoxide init --cmd j zsh)"'
+zinit light zdharma-continuum/null
 
-if (( $+commands[fzf] )) ; then
-    eval "$(fzf --zsh)"
-    export FZF_DEFAULT_COMMAND='fd'
-    export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-    export FZF_ALT_C_COMMAND="fd --type directory"
-fi
+zinit ice wait lucid has"jj" id-as"jj-comp" as"null" \
+  atload'source <(COMPLETE=zsh jj)'
+zinit light zdharma-continuum/null
+
+zinit ice wait lucid has"fzf" id-as"fzf-init" as"null" \
+  atload'eval "$(fzf --zsh)"
+  export FZF_DEFAULT_COMMAND=fd
+  export FZF_CTRL_T_COMMAND=fd
+  export FZF_ALT_C_COMMAND="fd --type directory"'
+zinit light zdharma-continuum/null
 
 # Prompt
 

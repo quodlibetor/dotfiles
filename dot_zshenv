@@ -19,8 +19,11 @@ if [[ -n "${ZSH_VERSION:-}" && -z "${BASH_VERSION:-}" ]]; then
     export path=(
         "${extra_path[@]}"
         $path
-        /usr/local/bin
+        /usr/local/bin # homebrew x86 should go above builtins
         /usr/local/sbin
+        /bin
+        /usr/bin
+        /usr/sbin
     )
     unset extra_path pth
 

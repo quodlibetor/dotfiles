@@ -93,7 +93,7 @@ end
 
 local function scheme_for_appearance(appearance)
   if appearance:find('Dark') then
-    return 'Modus-Vivendi', 'Modus-Vivendi-Tinted'
+    return 'City Lights (Gogh)', 'Modus-Vivendi-Tinted'
   else
     return 'Modus-Operandi', 'Modus-Operandi-Tinted'
   end

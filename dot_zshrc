@@ -105,9 +105,6 @@ zinit light zsh-users/zsh-autosuggestions
 # inshellisense contradicts zsh-autosuggestions
 #[ -f ~/.inshellisense/key-bindings.zsh ] && source ~/.inshellisense/key-bindings.zsh
 
-zinit ice wait lucid
-zinit snippet OMZ::lib/completion.zsh
-
 zinit ice as"completion"
 zinit snippet https://github.com/docker/cli/blob/master/contrib/completion/zsh/_docker
 

@@ -21,6 +21,21 @@ vim.api.nvim_create_autocmd('FileType', {
   end,
 })
 
+-- Switch modus theme variant when background option changes
+vim.api.nvim_create_autocmd("OptionSet", {
+  pattern = "background",
+  callback = function()
+    vim.cmd.colorscheme(vim.o.background == "light" and "modus_operandi" or "modus_vivendi")
+  end,
+})
+
+-- Re-query terminal background on focus gain so system appearance changes propagate
+vim.api.nvim_create_autocmd("FocusGained", {
+  callback = function()
+    io.write("\027]11;?\027\\")
+  end,
+})
+
 vim.api.nvim_create_autocmd({ "BufNewFile", "BufReadPost" }, {
   group = vim.api.nvim_create_augroup('lsp_hacks', { clear = true }),
   pattern = ".env*",

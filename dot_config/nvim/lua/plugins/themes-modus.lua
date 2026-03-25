@@ -3,7 +3,7 @@ return {
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = "modus_vivendi"
-    }
-  }
+      colorscheme = vim.o.background == "light" and "modus_operandi" or "modus_vivendi",
+    },
+  },
 }

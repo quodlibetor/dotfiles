@@ -82,33 +82,24 @@ wezterm.on("user-var-changed", function(window, pane, name, value)
   end
 end)
 
--- Attempt to set color scheme based on system appearance
---
--- local themes = {
---   Light = "",
---   Dark = "Modus-Vivendi",
--- }
--- -- wezterm.gui is not available to the mux server, so take care to
--- -- do something reasonable when this config is evaluated by the mux
--- local function get_appearance()
---   if wezterm.gui then
---     return wezterm.gui.get_appearance()
---   end
---   return 'Dark'
--- end
---
--- local function scheme_for_appearance(appearance)
---   if appearance:find 'Dark' then
---     return 'Builtin Solarized Dark'
---   else
---     return 'Builtin Solarized Light'
---   end
--- end
---
--- color_scheme = scheme_for_appearance(get_appearance())
+-- wezterm.gui is not available to the mux server, so take care to
+-- do something reasonable when this config is evaluated by the mux
+local function get_appearance()
+  if wezterm.gui then
+    return wezterm.gui.get_appearance()
+  end
+  return 'Dark'
+end
 
-local theme = 'Modus-Vivendi'
-local remote_theme = 'Modus-Vivendi-Tinted'
+local function scheme_for_appearance(appearance)
+  if appearance:find('Dark') then
+    return 'Modus-Vivendi', 'Modus-Vivendi-Tinted'
+  else
+    return 'Modus-Operandi', 'Modus-Operandi-Tinted'
+  end
+end
+
+local theme, remote_theme = scheme_for_appearance(get_appearance())
 
 wezterm.on('window-focus-changed', function(window, pane)
   local conf = window:get_config_overrides() or {}

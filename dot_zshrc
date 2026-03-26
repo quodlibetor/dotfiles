@@ -192,6 +192,16 @@ if [[ -n "${WEZTERM_PANE}" ]]; then
   precmd_functions+=(__git_precmd)
 fi
 
+__check_mnt_cache() {
+  [[ $USER != coder ]] && return
+  if [[ -d /mnt/cache ]]; then
+    unset MISSING_CACHE
+  else
+    export MISSING_CACHE="💥"
+  fi
+}
+precmd_functions+=(__check_mnt_cache)
+
 (( $+commands[vcs-status-daemon] )) && eval "$(vcs-status-daemon init zsh)"
 (( $+commands[starship] )) && eval "$(starship init zsh)"
 

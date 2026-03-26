@@ -1,6 +1,7 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
 add_newline = false
+format = "${env_var.MISSING_CACHE}$all"
 
 [directory]
 truncate_to_repo = false
@@ -51,6 +52,9 @@ disabled = true
 
 [vagrant]
 disabled = true
+
+[env_var.MISSING_CACHE]
+format = "$env_value "
 
 {{ if lookPath "vcs-status-daemon" -}}
 # disable all git status parts, the entire vcs status gets preformatted into

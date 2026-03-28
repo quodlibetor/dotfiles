@@ -6,11 +6,11 @@ go_set_gobin = true
 [tools]
 "github:eza-community/eza" = "latest"
 "github:golangci/golangci-lint" = "latest"
+"github:ilyagr/diffedit3" = "latest"
 "github:jesseduffield/lazygit" = "latest"
 "github:michel-kraemer/zsh-patina" = "latest"
 "github:quodlibetor/git-instafix" = "latest"
 "github:quodlibetor/s3glob" = "latest"
-"github:quodlibetor/vcs-status-daemon" = "latest"
 "github:terrastruct/d2" = "latest"
 "github:tummychow/git-absorb" = "latest"
 "go:github.com/go-delve/delve/cmd/dlv" = "latest"
@@ -20,6 +20,7 @@ go_set_gobin = true
 bat = "latest"
 chezmoi = "latest"
 claude-code = "latest"
+difftastic = "latest"
 dust = "latest"
 fzf = "latest"
 go = "latest"
@@ -36,6 +37,16 @@ starship = "latest"
 tokei = "latest"
 zoxide = "latest"
 
+{{- if not (or (stat (joinPath .chezmoi.homeDir ".local/bin/vcs-status-daemon"))
+               (stat (joinPath .chezmoi.homeDir ".cargo/bin/vcs-status-daemon"))) }}
+{{/* if this exists I've installed from source */}}
+"github:quodlibetor/vcs-status-daemon" = "latest"
+{{- end -}}
+{{ if (or (eq .chezmoi.os "linux")
+          (not (eq .chezmoi.arch "amd64"))) -}}
+{{/* packages which don't build for intel macs */}}
+"github:chronologos/lightjj"
+{{- end -}}
 {{ if eq .chezmoi.os "linux" -}}
 btop = "latest"
 delta = "latest"

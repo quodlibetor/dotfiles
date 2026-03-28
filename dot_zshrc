@@ -75,13 +75,6 @@ autoload -Uz _zinit
 
 ### End of Zinit's installer chunk
 
-if (( $+commands[zsh-patina] )); then
-  eval "$(zsh-patina activate)"
-else
-  zinit ice wait lucid
-  zinit light zdharma/fast-syntax-highlighting
-fi
-
 # TAB COMPLETIONS
 zinit ice wait"0b" lucid blockf
 zinit light zsh-users/zsh-completions
@@ -113,6 +106,18 @@ zinit light zdharma-continuum/null
 zinit ice wait lucid has"ruff" id-as"ruff-comp" as"null" \
   atload'eval "$(ruff generate-shell-completion zsh)"'
 zinit light zdharma-continuum/null
+
+# zsh-patina claims it is most reliable if it is the last thing sourced,
+# so put it as the last atload
+if (( $+commands[zsh-patina] )); then
+  zinit ice wait lucid id-as"zsh-patina-hl" as"null" \
+    atload'eval "$(zsh-patina activate)"'
+  zinit light zdharma-continuum/null
+else
+  zinit ice wait lucid
+  zinit light zdharma/fast-syntax-highlighting
+fi
+
 
 # inshellisense contradicts zsh-autosuggestions
 #[ -f ~/.inshellisense/key-bindings.zsh ] && source ~/.inshellisense/key-bindings.zsh

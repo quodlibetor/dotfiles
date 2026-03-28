@@ -7,6 +7,8 @@ name = "Brandon W Maister"
 diff-editor = ":builtin"
 default-command = "lgs"
 revsets-use-glob-by-default = true
+# https://docs.jj-vcs.dev/latest/config/#diff-format
+diff-formatter = "dt"
 
 [remotes.origin]
 auto-track-bookmarks = "glob:bwm/*"
@@ -16,6 +18,15 @@ lg = ["log", "-r", "full"]
 lgs = ["log", "-n20"]
 tug = ["bookmark", "advance"]
 tug- = ["bookmark", "advance", "--to", "@-"]
+
+# state reconciliation and diffs
+wus = ["workspace", "update-stale"]
+rdc = ["resolve", "--tool=diffconflicts"]
+diffweb = ["diff", "--tool=diffedit3"]
+diffb = ["diff", "--tool=:color-words"]
+# External tools, have them here to remind myself that they exist
+tui = ["util", "exec", "--", "jjui"]
+web = ["util", "exec", "--", "lightjj"]
 
 # the ancestors of @ that are not in trunc()
 lgcur = ["log", "-r", "cur"]
@@ -78,9 +89,23 @@ work = "active(@)"
 [fsmonitor]
 backend = "watchman"
 
-[merge-tools.nvimdiff]
-program = "nvim"
-merge-args = ["-c", "JJdiff", "-d", "$left", "$output", "$right"]
+[merge-tools.dt]
+# difftastic
+program = "difft"
+diff-args = ["--color=always", "--syntax-highlight=on", "$left", "$right"]
+merge-args = ["--color=always", "$left", "$right"]
+
+[merge-tools.dti]
+# difftastic but inline
+program = "difft"
+diff-args = [
+  "--color=always",
+  "--display=inline",
+  "--syntax-highlight=on",
+  "$left",
+  "$right",
+]
+merge-args = ["--color=always", "$left", "$right"]
 
 [merge-tools.diffconflicts]
 program = "nvim"

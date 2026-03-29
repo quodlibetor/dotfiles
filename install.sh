@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -eu
 
@@ -26,7 +26,7 @@ bash "${script_dir}/install-base" || true
 set -- init --apply --no-tty --no-pager --keep-going --source="${script_dir}"
 
 echo "Running 'chezmoi $*'" >&2
-[[ -f "$HOME/.zshenv" ]] && source "$HOME/.zshenv"
+[ -f "$HOME/.zshenv" ] && . "$HOME/.zshenv"
 mise exec -- chezmoi "$@" || true
 
 if [ -e "$HOME/init.sh" ]; then

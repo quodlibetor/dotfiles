@@ -69,7 +69,7 @@ draft_commit_description = "builtin_draft_commit_description_with_diff"
 #     “working changes” that lie on any connected branch containing at least one of my commits.
 # * ancestors(my_changes, 2) -> show the change on trunk() that they diverged from
 my_branches = 'reachable(mine() & immutable_heads().., immutable_heads()..)'
-working_mine = 'ancestors(@, 2) | ancestors(my_branches, 2)'
+working_mine = 'ancestors(@, 2) | ancestors(my_branches, 2) | trunk()::@'
 # Branches not merged into trunk() that contain at least one of my commits
 working_from_trunk = 'reachable(mine() ~ ::trunk(), trunk()..)'
 

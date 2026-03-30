@@ -1,6 +1,5 @@
 [settings]
 experimental = true
-pipx_uvx = true
 go_set_gobin = true
 
 [tools]
@@ -46,8 +45,8 @@ zoxide = "latest"
           (not (eq .chezmoi.arch "amd64"))) -}}
 {{/* packages which don't build for intel macs */}}
 "github:chronologos/lightjj" = "latest"
-{{- end -}}
-{{ if eq .chezmoi.os "linux" -}}
+{{- end }}
+{{- if eq .chezmoi.os "linux" }}
 btop = "latest"
 delta = "latest"
 fd = "latest"

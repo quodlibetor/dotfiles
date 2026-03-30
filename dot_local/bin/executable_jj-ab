@@ -37,6 +37,7 @@ fi
 local default_bookmark=$(jj config get 'revset-aliases."trunk()"' 2>/dev/null \
   | grep -oP '[\w/-]+(?=@)' || echo "main")
 local existing_bookmark=$(jj log -r "$rev" --no-graph -n1 -T 'bookmarks.join("\n")' \
+  | grep "^bwm/" \
   | grep -v "^${default_bookmark}$" \
   | head -n1)
 

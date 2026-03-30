@@ -48,8 +48,9 @@ if [[ $(uname -s) == Darwin ]]; then
     export CGO_CPPFLAGS="-Wno-error -Wno-nullability-completeness -Wno-expansion-to-defined"
 fi
 
-if [[ -d $HOME/.local/share/man ]]; then
-    export MANPATH="$HOME/.local/share/man:$MANPATH"
+if [[ -n "${ZSH_VERSION:-}" && -d $HOME/.local/share/man ]]; then
+    typeset -U MANPATH
+    export MANPATH="$HOME/.local/share/man:${MANPATH:-}"
 fi
 
 __cmd_exists() {

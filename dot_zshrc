@@ -1,7 +1,5 @@
 #!/usr/bin/env zsh
 
-. "$HOME/.zshenv"
-
 if [[ -n $JUST_WANT_PATH ]] ; then
     return
 fi

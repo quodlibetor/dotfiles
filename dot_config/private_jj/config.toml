@@ -53,6 +53,29 @@ pull = [
   "jj git fetch && jj rebase --skip-emptied --simplify-parents -b @ -d main@origin",
 ]
 
+#
+# megamerge support: https://isaaccorbrey.com/notes/jujutsu-megamerges-for-fun-and-profit
+#
+# `jj stack <revset>` to include specific revs
+stack = [
+  "rebase",
+  "--after",
+  "trunk()",
+  "--before",
+  "closest_merge(@)",
+  "--revision",
+]
+# `jj stage` to include the whole stack after the megamerge
+stage = ["stack", "closest_merge(@).. ~ empty()"]
+# `jj restack` to rebase *all* your changes onto `trunk()`
+restack = [
+  "rebase",
+  "--onto",
+  "trunk()",
+  "--source",
+  "roots(trunk()..) & mutable()",
+]
+
 [revsets]
 log = "working_mine"
 
@@ -60,6 +83,7 @@ log = "working_mine"
 draft_commit_description = "builtin_draft_commit_description_with_diff"
 
 [revset-aliases]
+"closest_merge(to)" = "heads(::to & merges())"
 # All "working" branches that include at least one of my commits
 # * immutable_heads().. -> commits that are not ancestors of any immutable head
 #   (i.e., not yet merged into trunk/tags/untracked remotes) but are ancestors of some visible head.

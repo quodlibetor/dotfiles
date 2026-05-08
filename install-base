@@ -115,6 +115,7 @@ needed_commands=(
     eza
     d2
     ejoffe/tap/spr:git-spr
+    fd
     git
     git-interactive-rebase-tool:interactive-rebase-tool
     hl
@@ -138,6 +139,12 @@ fi
 ran_mise=false
 if which mise >/dev/null 2>&1; then
     mise self-update -y || true
+    if ! which uv >/dev/null 2>&1; then
+        mise use -g uv
+    fi
+    if ! which cargo >/dev/null 2>&1; then
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    fi
     mise install --yes --jobs 10
     mise upgrade --yes --jobs 10
     ran_mise=true

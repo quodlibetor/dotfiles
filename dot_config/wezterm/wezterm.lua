@@ -1,5 +1,6 @@
 local wezterm = require("wezterm")
 local act = wezterm.action
+local root_loops_themes = require("root_loops_themes")
 
 local function basename(s)
   local trimmed = string.gsub(s, "/+$", "")
@@ -91,11 +92,13 @@ local function get_appearance()
   return 'Dark'
 end
 
+-- Returns (local_theme, remote_theme). Local panes get pineapple,
+-- coder SSH panes get blueberry so remote panes are visually distinct.
 local function scheme_for_appearance(appearance)
   if appearance:find('Dark') then
-    return 'City Lights (Gogh)', 'Modus-Vivendi-Tinted'
+    return 'dark_pineapple', 'dark_blueberry'
   else
-    return 'Silk Light (base16)', 'zenwritten_light' -- 'Modus-Operandi-Tinted'
+    return 'light_pineapple', 'light_blueberry'
   end
 end
 
@@ -115,11 +118,16 @@ if wezterm.config_builder then
   config = wezterm.config_builder()
 end
 
+-- Register the Root Loops schemes so they're resolvable by name below.
+config.color_schemes = root_loops_themes
+
 local tabline = wezterm.plugin.require("https://github.com/michaelbrusegard/tabline.wez")
 tabline.setup({
   options = {
     icons_enabled = true,
-    theme = theme,
+    -- Pass the theme table directly; tabline only auto-resolves
+    -- builtin scheme names, not ones registered via config.color_schemes.
+    theme = root_loops_themes[theme],
     color_overrides = {},
     section_separators = {
       left = wezterm.nerdfonts.pl_left_hard_divider,

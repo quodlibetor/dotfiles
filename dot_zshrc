@@ -382,7 +382,7 @@ function frg {
 }
 
 alias jjab="jj ab"
-alias jjj=jjui
+alias jjj="JJUI=1 jjui"
 
 alias gitab="git ab"
 

@@ -18,12 +18,15 @@ lg = ["log", "-r", "full"]
 lgs = ["log", "-n20"]
 tug = ["bookmark", "advance"]
 tug- = ["bookmark", "advance", "--to", "@-"]
+t- = ["tug-"]
 
 # state reconciliation and diffs
 wus = ["workspace", "update-stale"]
 rdc = ["resolve", "--tool=diffconflicts"]
 diffweb = ["diff", "--tool=diffedit3"]
 diffb = ["diff", "--tool=:color-words"]
+dt = ["diff", "--tool=dt"]
+dti = ["diff", "--tool=dti"]
 # External tools, have them here to remind myself that they exist
 tui = ["util", "exec", "--", "jjui"]
 web = ["util", "exec", "--", "lightjj"]
@@ -114,8 +117,8 @@ work = "active(@)"
 backend = "watchman"
 
 [merge-tools.dt]
-# difftastic
-program = "difft"
+# difftastic, via jj-difft wrapper that picks --display by terminal width
+program = "jj-difft"
 diff-args = ["--color=always", "--syntax-highlight=on", "$left", "$right"]
 merge-args = ["--color=always", "$left", "$right"]
 

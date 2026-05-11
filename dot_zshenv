@@ -57,7 +57,7 @@ __cmd_exists() {
     which "$1" >/dev/null 2>&1
 }
 
-if [[ $TERM == wezterm && -z $BROWSER ]] && __cmd_exists wezterm && __cmd_exists weztermopen ; then
+if [[ $TERM == wezterm && -z "${BROWSER:-}" ]] && __cmd_exists wezterm && __cmd_exists weztermopen ; then
     export BROWSER=weztermopen
 elif __cmd_exists fwd-browse && [[ $(uname -s) != Darwin && -z $BROWSER ]]; then
     export BROWSER=fwd-browse

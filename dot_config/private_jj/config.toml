@@ -1,4 +1,4 @@
-"$schema" = "https://jj-vcs.github.io/jj/latest/config-schema.json"
+#:schema https://docs.jj-vcs.dev/latest/config-schema.json
 
 [user]
 name = "Brandon W Maister"
@@ -27,6 +27,9 @@ diffweb = ["diff", "--tool=diffedit3"]
 diffb = ["diff", "--tool=:color-words"]
 dt = ["diff", "--tool=dt"]
 dti = ["diff", "--tool=dti"]
+# show description, nice because it doesn't include leading indentation
+sdesc = ["log", "--template", "description", "--no-graph", "-r"]
+
 # External tools, have them here to remind myself that they exist
 tui = ["util", "exec", "--", "jjui"]
 web = ["util", "exec", "--", "lightjj"]

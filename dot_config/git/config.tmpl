@@ -43,7 +43,7 @@
     # ==== Logging
     # Basic format for all log calls
     # (nb aliases aren't allowed to have underscores)
-    lg-base = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%ci) %C(bold blue)<%an>%Creset' --abbrev-commit
+    lg-base = log --graph --decorate-refs-exclude="refs/jj/*" --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%ci) %C(bold blue)<%an>%Creset' --abbrev-commit
     lg-exclude-prs = lg-base --decorate-refs-exclude='refs/pullreqs/*'
 
     # log commands

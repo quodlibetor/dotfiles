@@ -25,6 +25,8 @@ jj squash -m "message"    # NOT: jj squash (which opens editor)
 Editor-based commands will fail in non-interactive environments.
 
 2. **Verify operations with `jj st`** after mutations (`squash`, `abandon`, `rebase`, `restore`) to confirm the operation succeeded.
+3. Always use the `--git` flag for diffs (`jj diff --git`, `jj show --git`, `jj evolog --patch --git`, etc)
+
 
 ## Core Concepts
 
@@ -118,23 +120,23 @@ Regular changes:
 jj log
 
 # View with patches
-jj log -p
+jj log -p --git
 
 # View specific commit
-jj show <change-id>
+jj show --git <change-id>
 
 # View diff of working copy
-jj diff
+jj diff --git
 ```
 
 Evolution of an individual change, records all snapshots of a change:
 
 ```bash
 # View the evolution of the current change
-jj evolog
+jj evolog --git
 
 # View the evolution of a specific change
-jj evolog -r <change-id>
+jj evolog -r <change-id> --git
 ```
 
 ### Moving Between Commits
@@ -162,24 +164,24 @@ jj next -e
 
 Move changes from current commit into its parent:
 
-```bash
+```
 # Squash all changes into parent
 jj squash
+
+# Squash just the files from directory a/b/c and the file test/file.txt into change id xxl
+jj squash -t xxl -- a/b/c test/file.txt
 ```
 
 **Note**: `jj squash -i` opens an interactive UI and will hang in agent environments. Avoid it.
 
 ### Splitting Commits
 
-**Warning**: `jj split` with no arguments is interactive and will hang in agent environments.
+**Warning**: `jj split` with no arguments is interactive and will hang in agent environments,
+**ALWAYS provide a `-m MESSAGE` flag**
 
-To divide commits, use `jj split -- path/to/file`.
-
-To divide a commit, use `jj restore` to move changes out, then create separate commits manually.
+To divide commits, use `jj split -m wip -- path/to/file`.
 
 You can restore from a specific change or commit, including evolog commits, using `jj restore --from <change or commit id>`.
-
-You can
 
 ### Absorbing Changes
 

@@ -20,6 +20,12 @@ tug = ["bookmark", "advance"]
 tug- = ["bookmark", "advance", "--to", "@-"]
 t- = ["tug-"]
 
+# ignore eroneous input
+# saw this online: typing jj jj command should just be command
+jj = []
+# muscle memory causes me to type :q in jjui all the time
+q = ["util", "exec", "--", "echo", "this isn't vim"]
+
 # state reconciliation and diffs
 wus = ["workspace", "update-stale"]
 rdc = ["resolve", "--tool=diffconflicts"]

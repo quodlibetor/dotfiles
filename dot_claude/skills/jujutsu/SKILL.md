@@ -19,7 +19,8 @@ When running as an agent:
 ```bash
 # Always use -m to avoid editor prompts
 jj desc -m "message"      # NOT: jj desc
-jj squash -m "message"    # NOT: jj squash (which opens editor)
+jj squash -m "message"    # NOT: jj squash
+jj split -m "message" -- PATH    # NOT: jj split
 ```
 
 Editor-based commands will fail in non-interactive environments.

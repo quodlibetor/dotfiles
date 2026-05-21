@@ -38,6 +38,7 @@ if [[ $OS == darwin ]]; then
     runv "$brewcmd" install --cask \
         rectangle \
         wezterm@nightly \
+        flameshot \
         ;
 
     if [[ ! -d $HOME/.tmux/plugins ]]; then

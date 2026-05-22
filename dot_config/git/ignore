@@ -65,3 +65,4 @@ CLAUDE.local.md
 .claude/*
 
 **/.claude/settings.local.json
+.mcp.json

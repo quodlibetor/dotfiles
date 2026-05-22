@@ -175,6 +175,51 @@ jj squash -t xxl -- a/b/c test/file.txt
 
 **Note**: `jj squash -i` opens an interactive UI and will hang in agent environments. Avoid it.
 
+### DANGER — `jj squash --from X --into Y` MOVES content (does not copy)
+
+`jj squash --from <source> --into <target>` (with optional file paths)
+**moves** content out of the source commit into the target. The source loses
+the named files. If you then abandon the target commit, **the moved content
+is destroyed** — it is no longer in either commit and cannot be recovered
+except via `jj op restore`.
+
+The most common way to wipe out work by accident:
+
+```bash
+# DON'T do this for bisecting / "let me try with just file X"
+jj new <ancestor> -m "bisect: try with subset of files"
+jj squash --from <real-commit> --into @ src/foo.ts src/bar.ts
+# ... run tests ...
+jj abandon @          # ← destroys src/foo.ts and src/bar.ts in <real-commit>!
+```
+
+Safer ways to do partial / experimental checkouts:
+
+```bash
+# (a) `jj restore --from` COPIES files from another commit into the working
+#     copy without modifying the source. Use this for "what does the test do
+#     with just file X from commit Y?"
+jj new <ancestor>
+jj restore --from <real-commit> src/foo.ts src/bar.ts
+# ... run tests ...
+jj abandon @  # safe — <real-commit> is untouched
+
+# (b) `jj duplicate` if you want to keep the original commit intact and
+#     experiment on a copy:
+jj duplicate <real-commit>
+jj edit <new-duplicate>
+# ... mutate freely; original is intact
+
+# (c) If you've already done a destructive squash+abandon, recover with:
+jj op log                    # find the operation before the damage
+jj op restore <op-id>        # rewinds the entire repo to that state
+```
+
+Rule of thumb: `--from` / `--into` are **content moves**, not content copies.
+Before abandoning any commit that received content via squash, confirm the
+source still has what it needs (`jj diff -r <source>`) or that the receiving
+commit will be kept.
+
 ### Splitting Commits
 
 **Warning**: `jj split` with no arguments is interactive and will hang in agent environments,
@@ -203,13 +248,24 @@ jj abandon <change-id>
 
 ### Undoing Operations
 
-Reverse the last jj operation:
+**NEVER** use `jj undo` or `jj op restore` -- THESE WILL CONFLICT IF MULTIPLE
+AGENTS ARE WORKING IN PARALLEL.
 
-```bash
-jj undo
+### Hiding changes
+
+For bisecting, it's usually better to split and rebase than it is to restore,
+this is similar to git's stash workflow:
+
+For example:
+
 ```
-
-This reverts the repository to its state before the previous command. Useful for recovering from mistakes like accidental `abandon`, `squash`, or `rebase`.
+# get current parent commit
+current_parent=$(jj log -T change_id -n 1 --no-graph -r @-)
+# creates a new commit containing just path to file, ancestor of the change you end up on
+jj split -m "message" -- path/to/file.txkt
+# move that new commit *out from under you* so it is on a divergent branch
+jj rebase -r @ -o "$current_parent"
+```
 
 ### Restoring Files
 
@@ -351,8 +407,7 @@ jj st
 | Squash to parent | `jj squash` |
 | Auto-distribute | `jj absorb` |
 | Abandon commit | `jj abandon <id>` |
-| Undo last operation | `jj undo` |
-| Restore files | `jj restore [paths]` |
+| Copy files from another commit into working copy | `jj restore --from <id> [paths]` |
 | Create bookmark | `jj bookmark create <name>` |
 | Push bookmark | `jj git push -b <name>` |
 
@@ -363,4 +418,5 @@ jj st
 3. **Use change IDs**: They're stable across rewrites
 4. **Refine commits**: Leverage mutability for clean history
 5. **Embrace the workflow**: No staging area, no stashing - just commits
+6. That said, stashing looks like splitting changes and making them not part of your current history
 

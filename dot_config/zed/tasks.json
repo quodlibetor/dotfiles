@@ -1,0 +1,17 @@
+[
+  {
+    "label": "jjui",
+    "command": "jjui",
+    "use_new_terminal": false,
+    "reveal_target": "center",
+    "allow_concurrent_runs": false,
+    "env": {
+      "EDITOR": "zed -w",
+      "VISUAL": "zed -w",
+      "JJUI": "1",
+    },
+    "reveal": "always",
+    "hide": "on_success",
+    "shell": "system"
+  }
+]

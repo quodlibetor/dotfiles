@@ -1,0 +1,14 @@
+[
+  {
+    "context": "vim_mode == normal",
+    "bindings": {
+      "space u": [
+        "task::Spawn",
+        {
+          "task_name": "jjui",
+          "reveal_target": "center",
+        },
+      ],
+    },
+  },
+]

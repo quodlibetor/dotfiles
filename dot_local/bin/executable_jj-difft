@@ -4,7 +4,7 @@ set -eu
 # /dev/tty because jj may pipe difft's stdout to a pager, in which case
 # tput/stty on stdout would see the pager's pty, not the user's terminal.
 threshold=${JJ_DIFFT_WIDE_COLS:-160}
-cols=$(stty size </dev/tty 2>/dev/null | awk '{print $2}')
+cols=$( { stty size </dev/tty; } 2>/dev/null | awk '{print $2}')
 cols=${cols:-${COLUMNS:-80}}
 
 if (( cols < threshold )); then

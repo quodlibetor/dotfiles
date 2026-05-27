@@ -19,15 +19,12 @@ When running as an agent:
 ```bash
 # Always use -m to avoid editor prompts
 jj desc -m "message"      # NOT: jj desc
-jj squash -m "message"    # NOT: jj squash
-jj split -m "message" -- PATH    # NOT: jj split
+jj squash -m "message"    # NOT: jj squash (which opens editor)
 ```
 
 Editor-based commands will fail in non-interactive environments.
 
 2. **Verify operations with `jj st`** after mutations (`squash`, `abandon`, `rebase`, `restore`) to confirm the operation succeeded.
-3. Always use the `--git` flag for diffs (`jj diff --git`, `jj show --git`, `jj evolog --patch --git`, etc)
-
 
 ## Core Concepts
 
@@ -121,23 +118,23 @@ Regular changes:
 jj log
 
 # View with patches
-jj log -p --git
+jj log -p
 
 # View specific commit
-jj show --git <change-id>
+jj show <change-id>
 
 # View diff of working copy
-jj diff --git
+jj diff
 ```
 
 Evolution of an individual change, records all snapshots of a change:
 
 ```bash
 # View the evolution of the current change
-jj evolog --git
+jj evolog
 
 # View the evolution of a specific change
-jj evolog -r <change-id> --git
+jj evolog -r <change-id>
 ```
 
 ### Moving Between Commits
@@ -165,12 +162,9 @@ jj next -e
 
 Move changes from current commit into its parent:
 
-```
+```bash
 # Squash all changes into parent
 jj squash
-
-# Squash just the files from directory a/b/c and the file test/file.txt into change id xxl
-jj squash -t xxl -- a/b/c test/file.txt
 ```
 
 **Note**: `jj squash -i` opens an interactive UI and will hang in agent environments. Avoid it.
@@ -222,21 +216,59 @@ commit will be kept.
 
 ### Splitting Commits
 
-**Warning**: `jj split` with no arguments is interactive and will hang in agent environments,
+**Warning**: `jj split` with no arguments is interactive and will hang in agent environments.
 **ALWAYS provide a `-m MESSAGE` flag**
 
 To divide commits, use `jj split -m wip -- path/to/file`.
 
-You can restore from a specific change or commit, including evolog commits, using `jj restore --from <change or commit id>`.
+To divide a commit, use `jj restore` to move changes out, then create separate commits manually.
 
-### Absorbing Changes
+You can restore from a specific change or commit, including evolog commits and commits in the op log,
+using `jj restore --from <change or commit id> -- path/to/file`.
 
-Automatically distribute changes to the commits that last modified those lines:
+### DANGER — `jj absorb` redistributes the ENTIRE source commit
+
+`jj absorb` operates on the full diff of the source revision (`@` by
+default), not just incremental working-copy edits. Every hunk gets
+moved to the closest mutable ancestor that last touched those lines.
+
+That heuristic is unsafe when `@` is itself a real commit whose
+additions happen to land in regions an ancestor created. Common case:
+a stacked commit B that adds lines inside a function or modal markup
+defined in A. `jj absorb` will move B's *own* additions backward into
+A, then silently rebase B on top of the modified A — shredding B's
+content into A and stripping it from B's diff.
+
+**Default rule: do not run bare `jj absorb`.** Reach for one of these
+instead, in order:
+
+1. **`jj squash --into <target>`** when you have a focused diff (or a
+   scratch commit) that should land in a known commit. Explicit,
+   atomic, no heuristic — it moves exactly what you say from exactly
+   where you say. This is the best option whenever it fits.
+2. **`jj edit <target>`** when you need to make changes in several
+   places inside the target and want to see the file in its
+   post-target state. Predictable, descendants auto-rebase cleanly.
+3. **`jj absorb --into <revset>`** only as a last resort, when you
+   have many small unrelated hunks that each belong to different
+   ancestors and listing them out individually would be tedious.
+
+When you do reach for `jj absorb`, **always pass `--into <revset>`** to
+restrict which ancestors can receive hunks. The default `--into mutable()`
+is too broad — it includes every mutable ancestor.
 
 ```bash
-# Absorb working copy changes into appropriate ancestor commits
-jj absorb
+# Move only into a specific commit
+jj absorb --into <change-id>
+
+# Move only into the immediate parent
+jj absorb --into @-
 ```
+
+Even with `--into`, audit the result afterward with `jj diff -r <source>`
+and `jj diff -r <target>` to confirm no descendant lost content. Safest
+when the source commit has no description (i.e. it's a scratch
+working-copy commit); risky when the source is a real described commit.
 
 ### Abandoning Commits
 
@@ -375,14 +407,73 @@ jj git push -b my-feature
 
 ## Handling Conflicts
 
-jj allows committing conflicts — you can resolve them later:
+jj allows committing conflicts — every conflict is part of a
+commit's tree, not just a working-copy state. That means a
+conflict can sit silently in an ancestor commit even when `@`
+itself has no conflict markers.
 
 ```bash
-# View conflicts
+# Working-copy conflicts (the ones git would show)
 jj st
+
+# Every conflict reachable from @, including in ancestors
+jj log -r 'ancestors(@) & conflicts()'
 ```
 
-**Agent conflict resolution**: Do not use `jj resolve` (interactive). Instead, edit the conflicted files directly to remove conflict markers, then run `jj st` to verify resolution.
+Do **not** use `jj resolve` — it's interactive and hangs in
+agent environments.
+
+### Resolving conflicts in stacked commits
+
+Walk conflicted commits oldest-first. For each one:
+
+1. `jj new <conflicted-change-id>` — create an empty child of
+   the conflicted commit.
+2. Edit the conflicted files to remove conflict markers.
+3. `jj squash` — folds the resolution into its parent, clearing
+   the conflict there.
+4. Move to the next conflicted commit and repeat.
+
+Why this over `jj edit <id>` + edit-in-place: keeps each
+resolution as a discrete reviewable step before it's folded
+in, and avoids the working copy itself sitting on a conflicted
+commit while you think.
+
+### Self-resolving conflicts and empty commits
+
+A conflict in commit A can sometimes be "resolved" by a
+descendant B that happens to overwrite the same lines. The
+working copy looks healthy, but A still carries a conflict in
+its tree — the next rebase / split / revert will surface it.
+Resolve A anyway using the pattern above.
+
+After A is resolved, B may become **empty** (it was just
+re-stating what A now says). Abandon empty commits when that
+happens:
+
+```bash
+jj abandon <empty-change-id>
+```
+
+Verify with `jj log` that the empty commit is gone and the
+stack is clean.
+
+## Divergent changes
+
+A change is *divergent* when the same change ID points at two
+or more commits — usually because two workspaces touched the
+same change, or a rebase from one workspace landed under
+another. `jj st` / `jj log` mark these as `(divergent)`, and
+the unqualified change ID errors with a hint listing slash
+forms (`xxx/0`, `xxx/2`, …).
+
+Resolving divergence is uncommon but has its own pitfalls
+(the `change_id/N` slash form, mapping slash → commit, why
+`jj diff --from A --to B` between divergent siblings is
+misleading, when it's safe to abandon vs. when to ask the
+user). When you hit a divergent change, read
+[`divergent-changes.md`](divergent-changes.md) in this skill
+directory — it covers the resolution patterns end to end.
 
 ## Preserving Commit Quality
 
@@ -392,7 +483,7 @@ jj st
 2. **Is it atomic?** One logical change per commit
 3. **Is the message clear?** Use imperative verb phrase in sentence case format with no full stop: "Verb object"
 4. **Are there unrelated changes?** Use `jj restore` to move changes out, then create separate commits
-5. **Should changes be elsewhere?** Use `jj squash` or `jj absorb`
+5. **Should changes be elsewhere?** Prefer `jj squash --into <target>` (best when it fits). Fall back to `jj edit <target>` for in-place edits. Avoid bare `jj absorb` — see the danger note above; if you must, scope it with `--into <revset>`.
 
 ## Quick Reference
 
@@ -405,7 +496,7 @@ jj st
 | New commit | `jj st` then `jj new` only if `@` has changes, then `jj desc -m "message"` |
 | Edit commit | `jj edit <id>` |
 | Squash to parent | `jj squash` |
-| Auto-distribute | `jj absorb` |
+| Auto-distribute (DANGEROUS — see danger note) | `jj absorb --into <revset>` |
 | Abandon commit | `jj abandon <id>` |
 | Copy files from another commit into working copy | `jj restore --from <id> [paths]` |
 | Create bookmark | `jj bookmark create <name>` |

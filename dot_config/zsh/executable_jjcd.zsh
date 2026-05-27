@@ -42,6 +42,11 @@ EOF
   delete_bind=$(cat <<'EOF'
 ctrl-d:execute(
   name=$(printf "%s" {} | cut -d: -f1)
+  if [ "$name" = default ]; then
+    printf "refusing to delete the default workspace (press enter to continue)"
+    read -r confirm < /dev/tty
+    return
+  fi
   root=$(jj --ignore-working-copy workspace root --name "$name" 2>/dev/null)
   if [ -z "$root" ]; then
     printf "Error: could not find root for workspace \"%s\"\n" "$name" >&2

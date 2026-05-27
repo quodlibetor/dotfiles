@@ -156,3 +156,7 @@ merge-args = [
   "$right",
 ]
 merge-tool-edits-conflict-markers = true
+
+[merge-tools.delta]
+program = "delta"
+diff-args = ["--width=$width", "$left", "$right"]

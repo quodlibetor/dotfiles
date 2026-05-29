@@ -204,9 +204,15 @@ jj duplicate <real-commit>
 jj edit <new-duplicate>
 # ... mutate freely; original is intact
 
-# (c) If you've already done a destructive squash+abandon, recover with:
-jj op log                    # find the operation before the damage
-jj op restore <op-id>        # rewinds the entire repo to that state
+# (c) If you've already done a destructive squash+abandon, recover the content
+#     *forward* (NOT via `jj op restore`, which rewinds the whole repo and
+#     conflicts with parallel agents):
+jj op log --no-graph -n 20 \
+  -T 'self.id().short() ++ "  " ++ self.description() ++ "\n"'   # find the op before the abandon
+jj log --no-graph -r 'at_operation(<op-id>, <change-id>)' \
+  -T 'commit_id ++ "\n"'                   # commit ID of the lost content
+jj restore --from <commit-id> [paths]      # bring it back into the working copy
+#     See "Recovering data without `jj op restore`" below for the full pattern.
 ```
 
 Rule of thumb: `--from` / `--into` are **content moves**, not content copies.
@@ -281,7 +287,82 @@ jj abandon <change-id>
 ### Undoing Operations
 
 **NEVER** use `jj undo` or `jj op restore` -- THESE WILL CONFLICT IF MULTIPLE
-AGENTS ARE WORKING IN PARALLEL.
+AGENTS ARE WORKING IN PARALLEL. Both rewind the *entire repo* to a past
+operation, clobbering concurrent work from other workspaces and reintroducing
+divergent operations. When you need data from a past operation, recover it
+*forward* instead — see *Recovering data without `jj op restore`* below.
+
+### Recovering data without `jj op restore` (agent-safe)
+
+**jj never actually deletes data.** Every working-copy snapshot and every
+commit is preserved in the operation log and the content store, reachable by
+commit ID. So "I lost my changes" is almost always "my changes are orphaned in
+an earlier operation," not real loss.
+
+The naive recovery is `jj op restore <op>` — **don't** (see above). Instead,
+**bring the lost content forward into the current operation** by referencing
+the orphaned commit's ID directly. A full commit ID stays resolvable in the
+current op *even when the commit is hidden/abandoned* — `jj show`,
+`jj restore --from`, `jj new`, `jj duplicate` all accept it.
+
+The bridge between a past operation and the current one is the
+**`at_operation(<op-id>, <revset>)`** revset function: it evaluates a revset as
+of an earlier operation but returns commit IDs usable *now*. Combine it with
+ordinary revset functions to *locate* the lost commit by content instead of
+eyeballing IDs — `mine()`, `description(pat)`, `subject(pat)`,
+`files(fileset)`, `author(pat)`, `diff_lines(text, [files])` /
+`diff_lines_added` / `diff_lines_removed`.
+
+Everything below is non-interactive — no pager, no `jj op restore`:
+
+```bash
+# 1. Find the operation that holds the lost state. Read it from a templated
+#    op log (do NOT page-and-search). `snapshot working copy` ops are the ones
+#    that captured working-copy state.
+jj op log --no-graph -n 20 \
+  -T 'self.id().short() ++ "  " ++ self.description() ++ "\n"'
+
+# 2. Resolve the commit ID of `@` (or any revset) as of that operation.
+jj log --no-graph -r 'at_operation(<op-id>, @)' -T 'commit_id ++ "\n"'
+#    Or narrow by content if several ops could hold it, e.g.:
+#    -r 'at_operation(<op-id>, mine() & files("src/foo.ts"))'
+
+# 3. In the CURRENT operation, that commit ID is still resolvable. Bring the
+#    content forward however fits the situation:
+jj restore --from <commit-id>            # pull all those files into the working copy
+jj restore --from <commit-id> path/...   # ...or just specific paths
+jj new <commit-id>                        # ...or resume work directly on top of it
+jj duplicate <commit-id>                  # ...or copy it into the visible history
+```
+
+Verify with `jj st` / `jj diff` that the content is back before continuing.
+
+This is also the recovery for a destructive `squash --from/--into` + `abandon`
+(see the squash danger note above): the abandoned commit's content is still
+reachable by its commit ID from the op just before the abandon — `jj restore
+--from <commit-id>` brings it back without rewinding the repo.
+
+#### `jj workspace update-stale` "ate" my uncommitted changes
+
+The most common trigger. When another workspace rewrites a commit your
+workspace sits on, your workspace goes *stale*, and `jj workspace update-stale`
+resets `@` to the current working-copy commit. It **snapshots your stale
+working copy first**, so nothing is lost — but that snapshot lands in the op
+log *behind* a `reconcile divergent operations` op, where it's easy to miss and
+panic.
+
+The op you want is the `snapshot working copy` op that runs *immediately
+before* `reconcile divergent operations` — that snapshot, NOT the reconcile,
+holds your work:
+
+```bash
+jj op log --no-graph -n 20 \
+  -T 'self.id().short() ++ "  " ++ self.description() ++ "\n"'
+#   ...read the list, pick the `snapshot working copy` just before
+#   `reconcile divergent operations`.
+jj log --no-graph -r 'at_operation(<snapshot-op-id>, @)' -T 'commit_id ++ "\n"'
+jj restore --from <commit-id>    # then rebase onto the new base as needed
+```
 
 ### Hiding changes
 

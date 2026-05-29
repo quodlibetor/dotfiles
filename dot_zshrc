@@ -385,6 +385,7 @@ alias jjab="jj ab"
 alias jjj="JJUI=1 jjui"
 
 alias gitab="git ab"
+alias mdserve="mdserve --standalone"
 
 # Vterm stuff, tells emacs which directory we're currently in
 vterm_printf() {

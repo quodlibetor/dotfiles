@@ -556,6 +556,20 @@ user). When you hit a divergent change, read
 [`divergent-changes.md`](divergent-changes.md) in this skill
 directory — it covers the resolution patterns end to end.
 
+## Parallel work in workspaces
+
+jj *workspaces* are independent working copies that share one
+repo's history — the rough equivalent of git worktrees, used to
+run long tests while you keep editing, compare a file across
+commits, or sandbox parallel agents on divergent lines. This repo
+runs several long-lived ones (`jj workspace list`). When
+**creating, listing, inspecting, or cleaning up** a workspace —
+or after the user rebases the workspace you're in — read
+[`workspaces.md`](workspaces.md). It covers the create/list/cleanup
+commands, the `--ignore-working-copy`-guarantees-staleness rule
+for cross-workspace reads, and the post-rebase scope check that
+`CLAUDE.md` points here for.
+
 ## Preserving Commit Quality
 
 **IMPORTANT**: Because commits are mutable, always refine them:

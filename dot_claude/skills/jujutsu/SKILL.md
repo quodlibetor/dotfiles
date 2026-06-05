@@ -109,6 +109,27 @@ length for the change. Sections can be omitted if reading them adds no value.
 
 Descriptions should be in github flavored markdown.
 
+### Commit early and often — squashing is cheap, splitting is dear
+
+The refinement operations are **asymmetric** in jj. Combining commits is
+trivial and safe: `jj squash`, or `jj squash --into <target>` to fold a
+focused change into an earlier one. Pulling commits *apart* is the painful
+direction — `jj split` with no args is interactive (hangs in agent
+environments), the `-m -- <paths>` form only divides cleanly along file
+boundaries, and untangling two topics that share a file means a manual
+`jj restore` dance.
+
+So bias toward **more, smaller commits** as you work. Describe the change
+before you start, snapshot at each functional checkpoint, and start a new
+described change when you move to a distinct concern — rather than letting
+one giant undescribed working copy accumulate several unrelated topics that
+you then have to tease apart by hand.
+
+The asymmetry is the whole point: a history that's too *fine* is cheap to
+coarsen (squash); a history that's too *coarse* is expensive to refine
+(split). When in doubt, err fine. It is completely fine to produce a string
+of commits for a single task and combine them once the task is complete.
+
 ### Viewing History
 
 Regular changes:
@@ -578,8 +599,10 @@ runs several long-lived ones (`jj workspace list`). When
 or after the user rebases the workspace you're in — read
 [`workspaces.md`](workspaces.md). It covers the create/list/cleanup
 commands, the `--ignore-working-copy`-guarantees-staleness rule
-for cross-workspace reads, and the post-rebase scope check that
-`CLAUDE.md` points here for.
+for cross-workspace reads, **referencing another workspace's commit
+by its global change ID (an `@`-relative revset like `trunk()..@`
+won't see a sibling workspace's work)**, and the post-rebase scope
+check that `CLAUDE.md` points here for.
 
 ## Preserving Commit Quality
 

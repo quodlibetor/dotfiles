@@ -64,6 +64,45 @@ fast, non-mutating glance and stale is acceptable. When you need
 to know what's actually in another workspace, run a normal
 (snapshotting) command against it with `-R <root>`.
 
+## Referencing another workspace's commit — change IDs are global, `@`-relative revsets are not
+
+A commit made in another workspace is a **sibling** of your `@`,
+not an ancestor of it: both descend from a shared base, on
+divergent lines. So any **`@`-relative revset** — `trunk()..@`,
+`main..@`, `::@`, "my current branch" — **does not include it.**
+Running `jj log -r 'trunk()..@'` in workspace A will never show
+workspace B's work, no matter how recent.
+
+What *does* reach across workspaces is the **change ID** — it's
+stable and global, resolvable from any workspace regardless of
+where each `@` sits:
+
+```bash
+jj show -r <change-id>          # inspect another workspace's commit from yours
+jj diff -r <change-id>          # its diff, from anywhere
+jj log  -r '<name>@'            # a workspace's working-copy commit by name (e.g. default@, feature@)
+jj log  -r 'all() & description(glob:"*needle*")'   # find it without an @-relative filter
+```
+
+Practical trap when coordinating across workspaces (e.g. handing
+a job to a per-workspace agent or script): **don't tell it to
+locate a target commit via an `@`-relative revset.** From its
+workspace the sibling commit isn't on that line, so it finds
+*nothing* — or worse, grabs a different commit that **is** on its
+line (a same-named scaffold/plan commit, an earlier task whose
+description matches the same string). Pass the **explicit change
+ID plus the commit's expected one-line description**, and have the
+consumer confirm `jj show -r <id>` matches before acting. If you
+want the target reachable by an ordinary `@`-relative revset,
+first move onto it (`jj new <id>` / `jj edit <id>`) — that puts it
+on your line.
+
+Related reading pitfall: to answer "is X present / implemented?"
+read the **current file** at that commit, not a `jj diff` — a
+unified diff shows removed (old) lines that read like live code
+and invite the opposite conclusion. Use the diff for *what
+changed*, the file for *what is*.
+
 ## Staleness — when your own workspace falls behind
 
 When another workspace rewrites a commit *your* workspace sits

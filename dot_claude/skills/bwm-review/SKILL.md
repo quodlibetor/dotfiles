@@ -1,6 +1,6 @@
 ---
 name: bwm-review
-description: Deep error-search review of the current jj working-copy change (or a specified jj revision) using two mandatory fresh-context sub-agents — a correctness agent that traces blast radius for logic bugs and far-reaching effects, and a maintainability agent that biases toward the future (comment accuracy, unexplained intentional-wrongness, duplication, readability). Auto-fixes high-confidence findings and reports the rest. Use when the user says "/bwm-review", "bwm review", "review my change(s)", "review this commit", "blast-radius review", or asks for a deep correctness + maintainability pass on a change before committing/pushing.
+description: Deep error-search review of the current jj working-copy change (or a specified jj revision) using three mandatory fresh-context sub-agents — a correctness agent that traces blast radius for logic bugs and far-reaching effects, a maintainability agent that biases toward the future (comment accuracy, unexplained intentional-wrongness, duplication, readability), and a lightweight reviewability agent that hunts gratuitous churn and tangled concerns so the diff reads cleanly. Auto-fixes high-confidence findings and reports the rest. Use when the user says "/bwm-review", "bwm review", "review my change(s)", "review this commit", "blast-radius review", or asks for a deep correctness + maintainability pass on a change before committing/pushing.
 ---
 
 # bwm-review
@@ -10,16 +10,23 @@ duplicated code is debugged over and over for years. So this skill is not a poli
 nitpick pass — it digs for real defects and real future-cost, and it **fixes what it
 finds** rather than logging it for later.
 
-Two sub-agents are **mandatory** and always run, in parallel, each with **fresh context**
+Three sub-agents are **mandatory** and always run, in parallel, each with **fresh context**
 (no conversation history) so they judge the code independently:
 
 - **correctness** — blast-radius and logic-bug hunter, *guided* by a brief from the
   implementing Claude about what's likely to matter.
 - **maintainability** — biases toward the future: comment accuracy, unexplained
   intentional wrongness, duplication, and readability.
+- **reviewability** — lightweight; biases toward the *reviewer reading this diff today*.
+  Hunts gratuitous churn (renames, reorderings, moves with no behavioral or readability
+  payoff) and tangled concerns (a pure refactor smuggled in with a logic change), so the
+  diff is easy to grok. It deliberately pulls *against* the maintainability agent — where
+  maintainability says "churn is fine if it improves the code," reviewability says "don't
+  change what you didn't need to, and split what you did." Triage reconciles the two
+  (Step 3).
 
-You may add task-specific agents on top of these two (e.g. a concurrency agent for a lock
-change), but never fewer.
+You may add task-specific agents on top of these three (e.g. a concurrency agent for a
+lock change), but never fewer.
 
 ## Step 0 — Preflight
 
@@ -72,11 +79,11 @@ more heavily.
 Keep it to ~10–20 lines. Write it to `$RUNDIR/brief.md` (the run dir from Step 0) so both
 agent prompts can reference the path instead of re-inlining it.
 
-## Step 2 — Spawn the two mandatory agents (parallel, fresh context)
+## Step 2 — Spawn the three mandatory agents (parallel, fresh context)
 
-Launch both `Agent` calls (`subagent_type: general-purpose`) in a single message so they
-run concurrently. Each gets: the target revision, the diff path (`$RUNDIR/diff.patch`, or
-the diff inline if small), the brief path (`$RUNDIR/brief.md`), and the project-rules
+Launch all three `Agent` calls (`subagent_type: general-purpose`) in a single message so
+they run concurrently. Each gets: the target revision, the diff path (`$RUNDIR/diff.patch`,
+or the diff inline if small), the brief path (`$RUNDIR/brief.md`), and the project-rules
 paths. Pass the absolute, expanded `$RUNDIR` paths into the prompts — a subagent has its
 own shell and won't share your `$RUNDIR` variable. Each must return findings in the exact
 schema in Step 3.
@@ -176,18 +183,89 @@ Tell **both** agents, verbatim, what is *not* a finding:
 > this change, a predecessor commit, or a follow-up** (introduced-by-this-change → this
 > change; pre-existing → predecessor or follow-up). If you find nothing, say so.
 
+### Reviewability agent (lightweight)
+
+> You are a reviewability reviewer with fresh eyes on a single jj change, and your client
+> is the reviewer reading **this diff today**. A diff that's twice as big as it needed to
+> be — or that braids an incidental refactor through a real logic change — costs every
+> reviewer time and hides the bug that matters. Your one job is to make this diff easy to
+> grok. Keep it light: you are not a second maintainability pass and you do not hunt for
+> bugs. Read the brief at `<brief path>` for intent, then look only for the two things
+> below.
+>
+> 1. **Gratuitous churn.** Changes that alter the source without changing behavior and
+>    without a readability payoff — the diff would be strictly easier to review if the
+>    line had been left alone. Examples: a variable/function/parameter renamed for no
+>    reason the change needs; code moved or reordered with no functional effect;
+>    reformatting or rewrapping untouched lines; import reshuffling; whitespace-only edits;
+>    switching an idiom (e.g. `if let` vs `match`) where old and new are equally clear. For
+>    each, state plainly **why it has no payoff** and that reverting it to the original
+>    shrinks the diff with zero behavioral cost. Be careful: a rename that genuinely
+>    improves clarity, or a move required by the logic change, is **not** gratuitous — do
+>    not flag it. When unsure whether there's a payoff, lower your confidence rather than
+>    dropping the lead; triage decides.
+> 2. **Tangled concerns.** A single change that mixes a pure refactor (rename, extract,
+>    reorder, reformat) with a behavioral/logic change, such that the logic delta is hard
+>    to isolate in the diff. The remedy is to **split**: recommend extracting the pure
+>    refactor into a *predecessor* commit so the logic change then reads as a small, clean
+>    diff on top. Name concretely which hunks/files are the refactor and which are the
+>    logic, so the split is actionable.
+>
+> Hard rules for your judgment:
+> - **You optimise for the diff, not the destination.** "This churn makes the code nicer"
+>   does **not** justify it to you if the change didn't need it — the payoff has to be in
+>   *this* diff's legibility, not in some abstractly tidier end state. Surface the cost and
+>   move on; a separate triage step weighs your findings against the other reviews and
+>   decides what stands, so your job is to make the cost visible, not to win the argument
+>   or pre-concede it.
+> - **Never invent work.** If the diff is already tight and single-concern, say so plainly
+>   and return nothing. A clean diff is the expected result, not a failure to find things.
+> - Don't re-flag formatting a formatter would catch (CI runs it) unless it's churn on
+>   lines the change had no reason to touch.
+>
+> For each issue return: a stable id; a one-line title; the file:line — **a line number
+> from the actual source file, which you must open to confirm; never cite the patch's own
+> line numbers**; **severity** (blocker / important / minor — gratuitous churn is rarely
+> above minor; a badly tangled change is important); **confidence** 0–100 (that the churn
+> truly has no payoff, or that the concerns are genuinely separable); the review cost (how
+> the diff misleads or slows the reader); a specific suggested fix (**"revert to
+> `<original>`"** for churn, or the concrete predecessor-split for tangling); and
+> **placement** (gratuitous churn -> revert within this change; tangle -> recommend a
+> predecessor split, never auto-applied). If you find nothing, say so.
+
 ## Step 3 — Triage
 
-Collect both agents' findings into one list with fields:
+Collect all three agents' findings into one list with fields:
 `id · agent · title · file:line · severity · confidence · failure/cost · suggested fix · placement`.
 
-**Dedupe across agents first.** The same defect frequently surfaces in both agents'
-output — often as a confirmed finding from one and a low-confidence lead from the other
-(e.g. a panic-in-a-`Result` flagged by maintainability *and* listed as a correctness
-lead). Merge any two entries that point at the same file:line / same underlying issue
-into **one** finding: keep the higher severity and the higher confidence, union the
-reasoning, and note that both agents flagged it (independent agreement is itself signal —
-weight it up). Don't report the same problem twice under two ids.
+**Dedupe across agents first.** The same defect frequently surfaces in more than one
+agent's output — often as a confirmed finding from one and a low-confidence lead from
+another (e.g. a panic-in-a-`Result` flagged by maintainability *and* listed as a
+correctness lead). Merge any two entries that point at the same file:line / same
+underlying issue into **one** finding: keep the higher severity and the higher confidence,
+union the reasoning, and note that both flagged it (independent agreement is itself signal
+— weight it up). Don't report the same problem twice under two ids.
+
+**Then resolve reviewability-vs-maintainability conflicts.** These two agents are designed
+to disagree, and they will land on the same lines. Resolve each clash by this rule:
+
+- **Reviewability wins only when the churn is *purely cosmetic*** — the lines it wants
+  reverted carry no correctness or maintainability finding and have no behavioral effect.
+  A gratuitous rename/reorder with nothing real attached → revert it; drop the
+  maintainability "it's a bit nicer this way" view, because "a bit nicer" doesn't pay for
+  diff cost on a change that didn't need it.
+- **Correctness or maintainability wins when there's a *real* finding on those lines** —
+  if reviewability wants to revert a change that correctness flagged as a needed fix, or
+  that maintainability flagged as fixing a genuine defect (wrong comment, real
+  duplication, a readability problem that actually bites a future reader), the real
+  finding stands and reviewability's revert is dropped. Note the tension in the report so
+  the user sees it was considered.
+- **Tangled-concern (split) findings never conflict** — they don't ask to revert anything,
+  only to reorganize history. Carry them through to the confirm set regardless.
+
+When you genuinely can't tell whether churn has a payoff, treat it as *not* purely
+cosmetic (leave it; don't auto-revert) and surface it as a low-confidence reviewability
+lead rather than acting on it.
 
 Then split by the auto-fix gate (see Step 4 for what's eligible):
 
@@ -220,8 +298,17 @@ only if **all** hold:
 - the fix is unambiguous and self-contained — e.g. correcting a wrong/misleading comment,
   supplying a known "why" for an intentional-wrongness comment (only when you actually
   know the why from the session/brief — otherwise it goes to the confirm set), a clear
-  local de-duplication, a safe mechanical readability fix;
+  local de-duplication, a safe mechanical readability fix, or **reverting purely cosmetic
+  gratuitous churn** to its original form (a reviewability finding that survived the Step 3
+  conflict rule — i.e. no real finding sits on those lines);
 - you have everything needed to make it correct without guessing.
+
+**Commit-splitting is never auto-applied.** Reviewability's tangled-concern findings —
+"extract this refactor into a predecessor so the logic reads clean" — reshape history and
+are judgment calls about how to organize the change; they always go to the confirm set
+with a recommended split, and you apply only what the user approves. Reverting cosmetic
+churn is fine to auto-apply (it just makes lines you wrote match what was there before);
+re-slicing the change into multiple commits is not.
 
 A high-confidence fix that **changes runtime behavior** may still be auto-applied, but
 call it out prominently in the report — the user is most likely to want to eyeball those.
@@ -237,6 +324,12 @@ call it out prominently in the report — the user is most likely to want to eye
   the cleaned-up code.
 - **Pre-existing, independent** → recommend a **follow-up**: `jj new --after "$TARGET"`
   (or plain `jj new` when `TARGET` is `@`), fix, describe.
+- **Tangled concern, split recommended** (reviewability) → recommend peeling the pure
+  refactor out *ahead* of the logic change so the logic diff reads clean. The mechanic is
+  `jj split` on the target — interactively select the refactor-only hunks into the first
+  (predecessor) commit, leaving the logic change in the second; describe both. This is
+  **always confirm-only** (Step 4), so present it as a concrete recommendation — name the
+  hunks that go into the refactor commit — and run it only with the user's go-ahead.
 
 For the **auto-fix set** (only non-empty when the authorship gate above is open), apply
 using the placement rule above (introduced-by-change fixes default to folding into the
@@ -259,10 +352,14 @@ Present, in chat (local only — no PR/GitHub posting):
    changed behavior. Show `jj diff` of what you applied so the user can veto.
 3. **Needs your call** — the confirm set, grouped by severity, each with file:line, the
    concrete failure/future-cost, the suggested fix, and recommended placement.
-4. **Low-confidence leads** — the correctness agent's unconfirmed suspicions, briefly, so
-   nothing is silently dropped.
+4. **Diff hygiene** — reviewability's tangled-concern split recommendations (always
+   confirm-only), each naming which hunks form the refactor predecessor and which are the
+   logic change, plus any cosmetic-churn revert that lost to a real finding in Step 3 (so
+   the user sees the tension was weighed, not missed).
+5. **Low-confidence leads** — the correctness agent's unconfirmed suspicions and
+   reviewability's uncertain churn calls, briefly, so nothing is silently dropped.
 
-If both agents came back clean, say that plainly and stop — no manufactured findings.
+If all three agents came back clean, say that plainly and stop — no manufactured findings.
 
 ## Anti-patterns this skill exists to stop
 
@@ -275,3 +372,8 @@ If both agents came back clean, say that plainly and stop — no manufactured fi
 4. **Half-fixes.** Patching the symptom to keep the change small and seeding the next bug.
 5. **Manufactured findings.** Padding a clean change with nits to look thorough. Clean is
    a valid result; report it and stop.
+6. **Gratuitous churn.** Renaming, reordering, or reformatting lines the change had no
+   reason to touch, so the reviewer wades through noise to find the real delta. The
+   reviewability agent reverts the purely cosmetic noise and recommends splitting a refactor
+   out of a logic change — the deliberate counterweight to anti-pattern #3, reconciled in
+   Step 3 (real findings beat diff size; pure cosmetics lose to it).

@@ -56,26 +56,21 @@ new_parent=$2
 jj rebase --simplify-parents -b "$change" -d "parents($change) | $new_parent"
 jj log -r "$change | parents($change)"
 """, "--"]
-# `jj pull`: fetch, then rebase *everything* that was descended from main at
-# pull time and whatever @ was onto the freshly-fetched main.
-pull = [
-  "util",
-  "exec",
-  "--",
-  "bash",
-  "-c",
-  """
+# `jj pull`: fetch, then rebase all my unmerged work AND whatever stack @ is in
+# onto the freshly-fetched main.
+#   (mine() ~ ::main@origin)::  -> my commits not yet in main, plus descendants
+#   ::heads(@::) ~ ::main@origin -> @'s whole stack (tip = heads(@::)), unmerged
+# union, restrict to mutable, take roots so `rebase -s` carries each stack.
+pull = ["util", "exec", "--", "bash", "-c", """
 set -e
-old_main=$(jj log --no-graph --ignore-working-copy -r main@origin -T commit_id)
 jj git fetch
-src="roots((${old_main}.. | ::@) & mutable())"
+src="roots(((mine() ~ ::main@origin):: | (::heads(@::) ~ ::main@origin)) & mutable())"
 if [ -n "$(jj log --no-graph -r "$src" -T commit_id)" ]; then
   jj rebase --skip-emptied --simplify-parents -s "$src" -o main@origin
 else
-  echo "pull: nothing descended from main to rebase"
+  echo "pull: nothing of mine to rebase, everything is already on main"
 fi
-""",
-]
+"""]
 
 #
 # megamerge support: https://isaaccorbrey.com/notes/jujutsu-megamerges-for-fun-and-profit

@@ -56,13 +56,25 @@ new_parent=$2
 jj rebase --simplify-parents -b "$change" -d "parents($change) | $new_parent"
 jj log -r "$change | parents($change)"
 """, "--"]
+# `jj pull`: fetch, then rebase *everything* that was descended from main at
+# pull time and whatever @ was onto the freshly-fetched main.
 pull = [
   "util",
   "exec",
   "--",
   "bash",
   "-c",
-  "jj git fetch && jj rebase --skip-emptied --simplify-parents -b @ -d main@origin",
+  """
+set -e
+old_main=$(jj log --no-graph --ignore-working-copy -r main@origin -T commit_id)
+jj git fetch
+src="roots((${old_main}.. | ::@) & mutable())"
+if [ -n "$(jj log --no-graph -r "$src" -T commit_id)" ]; then
+  jj rebase --skip-emptied --simplify-parents -s "$src" -o main@origin
+else
+  echo "pull: nothing descended from main to rebase"
+fi
+""",
 ]
 
 #

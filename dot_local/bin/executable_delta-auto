@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Run delta, picking --light/--dark from the terminal's actual background color.
+# Detection: query the real terminal (not stdout, which jj pipes to its pager)
+# via OSC 11. Falls back to --dark if the terminal doesn't answer.
+theme_flag="--dark"
+if [ -e /dev/tty ]; then
+  old=$(stty -g </dev/tty 2>/dev/null) && {
+    stty raw -echo min 0 time 2 </dev/tty
+    printf '\033]11;?\033\\' >/dev/tty
+    IFS= read -r resp </dev/tty
+    stty "$old" </dev/tty
+    # resp ~ ]11;rgb:rrrr/gggg/bbbb -- take the high byte of each channel
+    rgb=${resp#*rgb:}
+    if [ "$rgb" != "$resp" ] && [ -n "$rgb" ]; then
+      r=$((16#${rgb:0:2})); g=$((16#${rgb:5:2})); b=$((16#${rgb:10:2}))
+      # perceived brightness (ITU-R BT.601); >128 => light background
+      [ $(( (r*299 + g*587 + b*114) / 1000 )) -gt 128 ] && theme_flag="--light"
+    fi
+  }
+fi
+exec delta "$theme_flag" "$@"

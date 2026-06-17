@@ -14,6 +14,7 @@ go_set_gobin = true
 "github:michel-kraemer/zsh-patina" = "latest"
 "github:quodlibetor/git-instafix" = "latest"
 "github:quodlibetor/s3glob" = "latest"
+"github:quodlibetor/vcs-status-daemon" = "latest"
 "github:terrastruct/d2" = "latest"
 "go:github.com/go-delve/delve/cmd/dlv" = "latest"
 "go:golang.org/x/tools/gopls" = "latest"
@@ -21,7 +22,6 @@ go_set_gobin = true
 "pipx:ruff" = "latest"
 bat = "latest"
 chezmoi = "latest"
-claude-code = "latest"
 difftastic = "latest"
 dust = "latest"
 fzf = "latest"
@@ -40,6 +40,10 @@ starship = "latest"
 tokei = "latest"
 uv = "latest"
 zoxide = "latest"
+
+[tools.claude-code]
+version = "latest"
+minimum_release_age = "0m"
 
 {{- if not (or (stat (joinPath .chezmoi.homeDir ".local/bin/vcs-status-daemon"))
                (stat (joinPath .chezmoi.homeDir ".cargo/bin/vcs-status-daemon"))) }}

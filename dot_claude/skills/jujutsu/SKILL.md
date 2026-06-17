@@ -504,6 +504,17 @@ jj log -r 'ancestors(@) & conflicts()'
 Do **not** use `jj resolve` — it's interactive and hangs in
 agent environments.
 
+### Generated / checked-in files: regenerate, don't hand-merge
+
+For conflicts in **generated** checked-in files (lockfiles,
+vendored dep trees, gazelle BUILD files, codegen output), don't
+hand-merge — the file is a function of its inputs. Resolve the
+human-authored inputs by hand, clear the generated files'
+markers with `jj restore --from @-`, then re-run the generator
+and let the snapshot capture the result. Note that a global
+lockfile (e.g. `MODULE.bazel.lock`) will re-conflict on every
+rebase the stack modifies it — expected, not cruft.
+
 ### Resolving conflicts in stacked commits
 
 Walk conflicted commits oldest-first. For each one:

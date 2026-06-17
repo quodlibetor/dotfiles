@@ -33,6 +33,7 @@ diffweb = ["diff", "--tool=diffedit3"]
 diffb = ["diff", "--tool=:color-words"]
 dt = ["diff", "--tool=dt"]
 dti = ["diff", "--tool=dti"]
+delta = ["diff", "--tool=delta"]
 # show description, nice because it doesn't include leading indentation
 sdesc = ["log", "--template", "description", "--no-graph", "-r"]
 
@@ -165,5 +166,7 @@ merge-args = [
 merge-tool-edits-conflict-markers = true
 
 [merge-tools.delta]
-program = "delta"
+# delta-auto wrapper probes the terminal background (OSC 11) and picks
+# --light/--dark per invocation; falls back to --dark if no tty answers.
+program = "delta-auto"
 diff-args = ["--width=$width", "$left", "$right"]

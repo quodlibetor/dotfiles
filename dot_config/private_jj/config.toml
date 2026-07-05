@@ -170,3 +170,14 @@ merge-tool-edits-conflict-markers = true
 # --light/--dark per invocation; falls back to --dark if no tty answers.
 program = "delta-auto"
 diff-args = ["--width=$width", "$left", "$right"]
+
+# When running under an AI agent (Claude Code sets CLAUDECODE=1; AI_AGENT is
+# also set), disable the interactive editor so `jj describe` etc. don't block
+# on an editor. `false` exits non-zero, forcing agents to pass `-m`.
+# --when.environments is an OR list; bare NAME matches if the var is set at all.
+# Keep this LAST in the file so [--scope.ui] doesn't swallow later top-level keys.
+[[--scope]]
+--when.environments = ["CLAUDECODE", "AI_AGENT"]
+
+[--scope.ui]
+editor = "false"

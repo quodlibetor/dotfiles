@@ -387,6 +387,45 @@ alias jjj="JJUI=1 jjui"
 alias gitab="git ab"
 alias mdserve="mdserve --standalone --open"
 
+# miniserve
+ms() {
+  # Figure out the port (miniserve defaults to 8080) so we can open the
+  # browser without having to capture and parse miniserve's output.
+  local port=8080 i
+  for (( i = 1; i <= $#; i++ )); do
+    case ${@[i]} in
+      -p|--port) port=${@[i+1]} ;;
+      -p=*|--port=*) port=${${@[i]}#*=} ;;
+    esac
+  done
+
+  local opener
+  if which open > /dev/null 2>&1; then
+    opener=open
+  elif which xdg-open > /dev/null 2>&1; then
+    opener=xdg-open
+  fi
+
+  # Poll until the port accepts connections, then open the browser.
+  # Backgrounded and disowned so it doesn't disturb miniserve on the terminal.
+  if [[ -n $opener ]]; then
+    (
+      zmodload zsh/net/tcp
+      local tries=0
+      while ! ztcp localhost $port 2>/dev/null; do
+        sleep 0.1
+        (( ++tries > 100 )) && return   # give up after ~10s
+      done
+      ztcp -c 2>/dev/null
+      $opener "http://localhost:$port"
+    ) &!
+  fi
+
+  # Run miniserve in the foreground so it keeps the TTY: raw, colored output
+  # and a working Ctrl-C.
+  miniserve "$@"
+}
+
 # Vterm stuff, tells emacs which directory we're currently in
 vterm_printf() {
     if [ -n "$TMUX" ]; then

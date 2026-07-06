@@ -3,9 +3,12 @@ experimental = true
 go_set_gobin = true
 
 [tools]
+"aqua:grafana/gcx" = "latest"
 # TODO: switch to upstream mdserve when my PRs are merged
 # "github:jfernandez/mdserve" = "latest"
 "cargo:https://github.com/quodlibetor/mdserve" = "branch:bwm-main"
+"cargo:https://github.com/quodlibetor/miniserve" = "branch:bwmmain"
+# "github:svenstaro/miniserve" = { version = "latest", matching = "miniserve", rename_exe = "miniserve", bin = "miniserve" }
 "github:DeCarabas/fwd" = "latest"
 "github:eza-community/eza" = "latest"
 "github:golangci/golangci-lint" = "latest"
@@ -14,14 +17,13 @@ go_set_gobin = true
 "github:michel-kraemer/zsh-patina" = "latest"
 "github:quodlibetor/git-instafix" = "latest"
 "github:quodlibetor/s3glob" = "latest"
-"github:quodlibetor/vcs-status-daemon" = "latest"
-"github:svenstaro/miniserve" = { version = "latest", matching = "miniserve", rename_exe = "miniserve", bin = "miniserve" }
 "github:terrastruct/d2" = "latest"
 "go:github.com/go-delve/delve/cmd/dlv" = "latest"
 "go:golang.org/x/tools/gopls" = "latest"
 "pipx:git-delete-merged-branches" = "latest"
 "pipx:ruff" = "latest"
 bat = "latest"
+claude-code = { version = "latest", minimum_release_age = "0m" }
 chezmoi = "latest"
 difftastic = "latest"
 dust = "latest"
@@ -43,14 +45,10 @@ tokei = "latest"
 uv = "latest"
 zoxide = "latest"
 
-[tools.claude-code]
-version = "latest"
-minimum_release_age = "0m"
-
 {{- if not (or (stat (joinPath .chezmoi.homeDir ".local/bin/vcs-status-daemon"))
                (stat (joinPath .chezmoi.homeDir ".cargo/bin/vcs-status-daemon"))) }}
 {{/* if this exists I've installed from source */}}
-"github:quodlibetor/vcs-status-daemon" = "latest"
+"github:quodlibetor/vcs-status-daemon" = { version = "latest", minimum_release_age = "0m" }
 {{- end -}}
 {{ if (or (eq .chezmoi.os "linux")
           (not (eq .chezmoi.arch "amd64"))) -}}

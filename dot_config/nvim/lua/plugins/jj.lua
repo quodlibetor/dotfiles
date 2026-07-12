@@ -10,5 +10,5 @@ end, { desc = "jj diff setup" })
 return {
   {
     "rafikdraoui/jj-diffconflicts",
-  }
+  },
 }

@@ -12,9 +12,9 @@ vim.opt.rtp:prepend(vim.env.LAZY or lazypath)
 local wez_bin = os.getenv("WEZTERM_EXECUTABLE")
 
 if
-    vim.version().minor >= 10
-    and wez_bin
-    and string.find(wez_bin, "server") -- means we are a server that a client is talking to
+  vim.version().minor >= 10
+  and wez_bin
+  and string.find(wez_bin, "server") -- means we are a server that a client is talking to
 then
   local function local_paste(_)
     return function(_)
@@ -40,7 +40,7 @@ end
 require("lazy").setup({
   spec = {
     -- add LazyVim and import its plugins
-    { "LazyVim/LazyVim",                        import = "lazyvim.plugins" },
+    { "LazyVim/LazyVim", import = "lazyvim.plugins" },
     -- import any extras modules here
     -- { import = "lazyvim.plugins.extras.lang.typescript" },
     -- { import = "lazyvim.plugins.extras.lang.json" },

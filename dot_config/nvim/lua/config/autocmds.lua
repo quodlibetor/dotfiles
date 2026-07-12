@@ -2,13 +2,13 @@
 -- Default autocmds that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/autocmds.lua
 -- Add any additional autocmds here
 
-vim.api.nvim_create_autocmd('FileType', {
-  group = vim.api.nvim_create_augroup('trim_whitespaces', { clear = true }),
-  desc = 'Trim trailing white spaces',
-  pattern = '*',
+vim.api.nvim_create_autocmd("FileType", {
+  group = vim.api.nvim_create_augroup("trim_whitespaces", { clear = true }),
+  desc = "Trim trailing white spaces",
+  pattern = "*",
   callback = function()
-    vim.api.nvim_create_autocmd('BufWritePre', {
-      pattern = '<buffer>',
+    vim.api.nvim_create_autocmd("BufWritePre", {
+      pattern = "<buffer>",
       -- Trim trailing whitespaces
       callback = function()
         -- Save cursor position to restore later
@@ -37,7 +37,7 @@ vim.api.nvim_create_autocmd("FocusGained", {
 })
 
 vim.api.nvim_create_autocmd({ "BufNewFile", "BufReadPost" }, {
-  group = vim.api.nvim_create_augroup('lsp_hacks', { clear = true }),
+  group = vim.api.nvim_create_augroup("lsp_hacks", { clear = true }),
   pattern = ".env*",
   callback = function(e)
     vim.diagnostic.enable(false, { bufnr = e.buf })

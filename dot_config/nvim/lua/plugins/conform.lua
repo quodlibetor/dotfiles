@@ -1,6 +1,9 @@
 return {
   "stevearc/conform.nvim",
   opts = {
+    formatters_by_ft = {
+      lua = { "stylua" },
+    },
     formatters = {
       shfmt = {
         args = { "--indent", "4", "--case-indent", "--binary-next-line" },

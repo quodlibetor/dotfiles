@@ -2,4 +2,5 @@
 --when.environments = ["JJUI"]
 
 [ui]
-diff-formatter = ":color-words"
+# diff-formatter = ":color-words"
+diff-formatter = "delta"

@@ -1,21 +1,59 @@
 #!/usr/bin/env bash
 # Run delta, picking --light/--dark from the terminal's actual background color.
 # Detection: query the real terminal (not stdout, which jj pipes to its pager)
-# via OSC 11. Falls back to --dark if the terminal doesn't answer.
-theme_flag="--dark"
-if [ -e /dev/tty ]; then
+# via OSC 11, caching the answer. Falls back to the cache, then to --dark.
+#
+# The probe is only safe when nothing else owns the tty. Inside a TUI like jjui
+# the terminal is already in raw mode and the TUI is reading it too: our
+# stty/OSC handshake races with its termios setup (if it re-applies VMIN=1
+# between our stty and our read, the read blocks forever and hangs the TUI's
+# preview), and any reply bytes we don't consume land in its input parser as
+# garbage. So under jjui we skip the probe and reuse the cached value.
+cache="${XDG_CACHE_HOME:-$HOME/.cache}/delta-auto-theme"
+theme_flag=""
+[ -r "$cache" ] && IFS= read -r theme_flag <"$cache"
+case "$theme_flag" in --light | --dark) ;; *) theme_flag="" ;; esac
+case "$DELTA_AUTO_THEME" in light) theme_flag="--light" ;; dark) theme_flag="--dark" ;; esac
+
+if [ -z "$JJUI" ] && [ -z "$DELTA_AUTO_THEME" ] && [ -e /dev/tty ]; then
   old=$(stty -g </dev/tty 2>/dev/null) && {
     stty raw -echo min 0 time 2 </dev/tty
     printf '\033]11;?\033\\' >/dev/tty
-    IFS= read -r resp </dev/tty
+    # -t guards against the terminal being put back into blocking mode under us
+    IFS= read -r -t 1 resp </dev/tty
     stty "$old" </dev/tty
     # resp ~ ]11;rgb:rrrr/gggg/bbbb -- take the high byte of each channel
     rgb=${resp#*rgb:}
     if [ "$rgb" != "$resp" ] && [ -n "$rgb" ]; then
       r=$((16#${rgb:0:2})); g=$((16#${rgb:5:2})); b=$((16#${rgb:10:2}))
       # perceived brightness (ITU-R BT.601); >128 => light background
-      [ $(( (r*299 + g*587 + b*114) / 1000 )) -gt 128 ] && theme_flag="--light"
+      if [ $(( (r*299 + g*587 + b*114) / 1000 )) -gt 128 ]; then
+        theme_flag="--light"
+      else
+        theme_flag="--dark"
+      fi
+      mkdir -p "${cache%/*}" && printf '%s\n' "$theme_flag" >"$cache"
     fi
   }
 fi
-exec delta "$theme_flag" "$@"
+theme_flag=${theme_flag:---dark}
+
+# Narrow terminals can't fit delta's side-by-side/decorated layout, so fall back
+# to --color-only (plain diff text, just colorized) below 200 columns. jj passes
+# the width via --width=N (see [merge-tools.delta] diff-args in jj/config.toml).
+width=""
+prev=""
+for arg in "$@"; do
+  case "$arg" in
+    --width=*) width=${arg#--width=} ;;
+    *) [ "$prev" = "--width" ] && width=$arg ;;
+  esac
+  prev=$arg
+done
+color_only=()
+case "$width" in
+  *[!0-9]* | "") ;;                                  # missing or not a number
+  *) [ "$width" -lt 200 ] && color_only=(--color-only) ;;
+esac
+
+exec delta "$theme_flag" "${color_only[@]}" "$@"

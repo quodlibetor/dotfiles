@@ -8,7 +8,9 @@ allowed-tools: Bash(jj *)
 
 This skill helps you work with Jujutsu, a Git-compatible VCS with mutable commits and automatic rebasing.
 
-**Tested with jj v0.37.0** - Commands may differ in other versions.
+**Tested with jj v0.43.0** - Commands may differ in other versions. Notably,
+`jj rebase`'s destination flag is now `-o`/`--onto`; `-d`/`--destination`
+survive as aliases, and `--before`/`--after` as aliases of `-B`/`-A`.
 
 ## Important: Automated/Agent Environment
 
@@ -71,9 +73,118 @@ Prefer using Change IDs when referencing commits in commands.
 
 ### Revsets describe sets of changes
 
-For example, since branches aren't a thing in jujutsu, the revset "trunk()..@" represents
-all the changes in the current history that are not in main, and could be thought of as
-"the current branch".
+A *revset* is an expression naming a set of commits; every `-r` takes one.
+Since branches aren't a thing in jujutsu, `trunk()..@` represents everything
+in the current history that isn't in main — "the current branch." (`trunk()`
+is config-resolved, not literal: the default bookmark of the `upstream` or
+`origin` remote, falling back to `main`, `master`, then `trunk`.)
+
+| you want | jj | the git habit that FAILS |
+|---|---|---|
+| parent / grandparent | `X-` / `X--` | `X~1`, `X~2`, `X-2` |
+| child | `X+` | — |
+| N generations back | `ancestors(X, N)` | `X~N` |
+| ancestors including X | `::X` | |
+| descendants including X | `X::` | |
+| range **including** both ends | `A::B` | |
+| range **excluding** A | `A..B` (same as git) | |
+| and / or / **difference** | `A & B`, `A \| B`, `A ~ B` | `~` is NOT "parent" |
+| commits touching a path | `files(path)` | `file(path)` — no such function |
+| git's `diff A...B` | `jj diff -r 'A..B'` | git's `...` has no jj operator |
+
+`-` and `+` are postfix operators that **chain** (`@---`); there is no
+numeric suffix. Two syntax rules, each worth a wasted round trip:
+
+- **No whitespace around `..` or `::`.** `A .. B` is `Error: Failed to
+  parse revset: Syntax error`. Write `A..B`.
+- **Quote the whole revset** — `~`, `|`, `&` are shell metacharacters.
+
+And one that is worse because it is silent:
+
+- **A backwards range is empty, not an error.** `B..A`, where A is an
+  *ancestor* of B, prints nothing and **exits 0**; `jj diff -r` on it
+  reports `0 files changed`. When a revset comes back empty, suspect the
+  direction before you suspect the repo.
+- **`..` does not distribute over `|` on its left side.** Per jj's own
+  docs, `(A | B)..` is *not* `A.. | B..` — it is `A.. & B..`. Build the
+  union inside the endpoints only when you mean intersection.
+
+### Inspecting a revision — `jj show` takes no paths
+
+`jj show`'s only positional argument is `[REVSETS]...`. It has **no**
+path/fileset filter, so extra arguments are parsed as *more revisions* and
+git-style path scoping fails with a misleading error:
+
+```bash
+jj show -r mslluvyvysup --git src/hooks/usePopoverDismiss.ts
+# Error: Revision `src/hooks/usePopoverDismiss.ts` doesn't exist
+```
+
+A `--` separator does **not** help — there is no positional slot for it to
+retarget to. This is the most-repeated jj mistake in this user's history
+(30+ occurrences across a dozen sessions, mostly review subagents trying to
+scope a diff read). Reach for one of these instead:
+
+```bash
+jj diff -r <rev> --git -- <path>...   # the patch, path-scoped
+jj file show -r <rev> <path>          # the file's full content at <rev>
+```
+
+`jj log` and `jj split` carry the mirror-image trap: their positional
+argument is `[FILESETS]`, *not* revisions. `jj log <rev>` does not fail —
+it prints `Warning: The argument "<rev>" is being interpreted as a fileset
+expression` and an empty log, which is easy to miss. Always `jj log -r
+<rev>`. (`show`, `new`, `abandon` and `duplicate` *do* accept a bare
+positional revision.)
+
+### Comparing two revisions — `--from/--to`, not `A..B`
+
+`jj diff -r <revset>` shows the combined diff *of the commits in that
+revset* against their parents. `jj diff --from A --to B` compares two
+trees. On a linear ancestor chain the two agree, which is exactly why
+`A..B` looks safe — but **it degrades silently when A is not an ancestor
+of B.**
+
+Reference incident: a review brief scoped round 2 of a task as
+`jj diff -r '5bd05283..da926e07'`. Those were two rounds of the *same
+amended change* — predecessor and successor, not parent and child — so
+they share a parent, the revset collapsed to just `{da926e07}`, and the
+subagent got that commit's entire diff against its own parent. A
+byte-identical `gate-cheap-suite.sh` was rendered as 85 lines all-new, and
+the review pass reviewed the wrong thing.
+
+**To compare two specific commits, always `jj diff --from A --to B`.**
+Reserve `-r 'A..B'` for "show me the work in this range," where you already
+know A is an ancestor of B. The same trap applies to divergent siblings —
+see [`divergent-changes.md`](divergent-changes.md).
+
+### Which selection flag does this subcommand take?
+
+The vocabulary is not uniform. `--to` is an alias of `--into` on
+`squash`/`restore`/`absorb`, but `diff` has only `--to` (there is no
+`--into`), and `rebase` has none of them:
+
+| command | source | destination |
+|---|---|---|
+| `diff` | `-r` (a revset, may be a range), `--from` | `--to` |
+| `squash` | `-r`, `--from` | `--into` (alias `--to`) |
+| `restore` | `--from`, `-c/--changes-in` | `--into` (alias `--to`) |
+| `absorb` | `--from` | `--into` (alias `--to`) |
+| `rebase` | `-r` / `-s` / `-b` | `-o/--onto` (alias `-d`), `-A/--insert-after`, `-B/--insert-before` |
+| `bookmark move` | `--from` | `--to` |
+
+`jj rebase` with no selector at all defaults to `-b @`. Which of
+`-r`/`-s`/`-b` to reach for, and why `--before`/`--after` beats a bare
+`-o`, is [`reordering.md`](reordering.md).
+
+### A revision name carries no repo with it
+
+Change IDs are global *within* a repo — but which repo is decided by the
+shell's cwd, and the agent harness resets cwd between Bash calls. Observed
+twice in one session: a `jj edit <rev>` intended for one workspace ran in a
+sibling and moved *that* workspace's working copy onto the wrong commit
+while a gate was running against it. Either `cd` explicitly inside every jj
+call or pass `-R <path>`; never inherit a cd from a previous call.
 
 ## Essential Workflow
 
@@ -113,7 +224,18 @@ Descriptions should be in github flavored markdown.
 
 The refinement operations are **asymmetric** in jj. Combining commits is
 trivial and safe: `jj squash`, or `jj squash --into <target>` to fold a
-focused change into an earlier one. Pulling commits *apart* is the painful
+focused change into an earlier one. **But a bare `jj squash` targets
+whatever `@`'s parent happens to be — check `jj log -r @ -T 'parents…'`
+first whenever the working copy might not sit where you think.** In a
+shared-line workflow the failure is severe: after a merge-queue land
+re-attaches a workspace, `@` can be a SIBLING of the stack you're working
+(parented directly on the landed tip), and a bare squash then AMENDS THE
+LANDED COMMIT — rewriting history other workspaces have rebased onto
+(observed live; `jj undo` recovered it). When folding stray working-copy
+edits into a stack, always name the destination: `jj squash --into
+<stack-head>`. `jj undo` reverts the whole last operation including the
+descendant rebases — use it immediately on any surprise, before new
+operations bury the mistake. Pulling commits *apart* is the painful
 direction — `jj split` with no args is interactive (hangs in agent
 environments), the `-m -- <paths>` form only divides cleanly along file
 boundaries, and untangling two topics that share a file means a manual
@@ -190,6 +312,15 @@ jj squash
 
 **Note**: `jj squash -i` opens an interactive UI and will hang in agent environments. Avoid it.
 
+**`-m ""` silently ERASES the destination's description.** `jj squash -m <msg>`
+sets the combined commit's message — an empty string is accepted and leaves the
+commit undescribed, and a fallback chain like `jj squash -m "" || jj squash
+--use-destination-message` "succeeds" down the first branch, so the fallback
+never runs. When folding an undescribed working copy into a described parent,
+use `--use-destination-message` (alone, no `-m`) to keep the parent's message.
+Verify after: `jj log -r <dest> -T 'description.first_line()'` — an undescribed
+commit can ride all the way to landing before anyone notices.
+
 ### DANGER — `jj squash --from X --into Y` MOVES content (does not copy)
 
 `jj squash --from <source> --into <target>` (with optional file paths)
@@ -243,10 +374,20 @@ commit will be kept.
 
 ### Splitting Commits
 
-**Warning**: `jj split` with no arguments is interactive and will hang in agent environments.
-**ALWAYS provide a `-m MESSAGE` flag**
+**Warning**: `jj split` will hang in agent environments, and it has **two**
+separate interactive surfaces that need two different flags. `-m` alone is
+**not** enough:
 
-To divide commits, use `jj split -m wip -- path/to/file`.
+- The **diff editor** is suppressed by passing *filesets*. Per
+  `jj split --help`, `-i/--interactive` "is the default if no filesets are
+  provided" — so `jj split -m wip` with no path still opens an editor and
+  hangs.
+- The **description editor** is suppressed by `-m <MESSAGE>` ("the change
+  description to use for the selected changes (don't open an editor)").
+
+So always pass **both**: `jj split -m wip -- path/to/file`. Note that
+`--tool` implies `--interactive`, and `--editor` forces the description
+editor open — never pass either from an agent.
 
 To divide a commit, use `jj restore` to move changes out, then create separate commits manually.
 
@@ -372,9 +513,30 @@ working copy first**, so nothing is lost — but that snapshot lands in the op
 log *behind* a `reconcile divergent operations` op, where it's easy to miss and
 panic.
 
-The op you want is the `snapshot working copy` op that runs *immediately
-before* `reconcile divergent operations` — that snapshot, NOT the reconcile,
-holds your work:
+**Check `jj log` for a divergent twin first — it is often right there.**
+The snapshot frequently lands as a second commit sharing your working copy's
+*change id*: one empty (the reset `@`), one non-empty (your work). `jj st`
+announces it as `(divergent)`, and `jj log -r <change-id>` errors with a hint
+listing `<id>/0`, `<id>/2`. No op-log spelunking needed:
+
+```bash
+jj log -r 'change_id(wnmpwvvt)' --no-graph \
+  -T 'commit_id.short() ++ " empty=" ++ if(empty,"yes","NO") ++ "\n"'
+#   → the empty one is the reset @; the NON-empty one holds your edits.
+jj diff -r <non-empty-commit-id>          # confirm it is really your work
+jj squash --from <non-empty-commit-id> --into <target-change>
+#   → edits land where you wanted them, and the divergence resolves.
+```
+
+Do **not** `jj abandon` the twin before diffing it — that is the move that
+actually loses the work. And back edits up (`cp` to a temp dir) *before*
+running `update-stale` when you have uncommitted work you care about; the
+file on disk does come back without them.
+
+If no twin is visible, fall back to the op log. The op you want is the
+`snapshot working copy` op that runs *immediately before*
+`reconcile divergent operations` — that snapshot, NOT the reconcile, holds
+your work:
 
 ```bash
 jj op log --no-graph -n 20 \
@@ -400,6 +562,69 @@ jj split -m "message" -- path/to/file.txkt
 # move that new commit *out from under you* so it is on a divergent branch
 jj rebase -r @ -o "$current_parent"
 ```
+
+### DANGER — `jj rebase -r X` silently detaches X from its own children
+
+`jj rebase -r <X> -o <dest>` moves **only** X. X's children do not follow it:
+they are re-parented onto **X's old parents**, so the chain closes over the
+gap where X used to be. That is the documented behaviour and it is what you
+want when extracting a commit — but it is a trap when you meant "move this
+commit and keep the stack on top of it," because the stack keeps building and
+testing *without* X, and nothing reports an error.
+
+The failure is quiet and arbitrarily delayed. What you see later is X's
+contribution missing from every descendant — a module declaration gone, a
+function you deleted in X reappearing — while `jj diff -r <child>` still looks
+correct, because each child's own diff really is unchanged. Only the parentage
+is wrong.
+
+```bash
+# BEFORE any -r rebase of a commit that has children, record the shape:
+jj log -r 'A::' -T 'change_id.short(8) ++ " <- " ++
+                    parents.map(|p| p.change_id().short(8)).join(",") ++ "\n"'
+jj rebase -r X -o NEWDEST
+# ...then read it back and confirm X's child still points at X:
+jj log -r 'A::' -T 'change_id.short(8) ++ " <- " ++
+                    parents.map(|p| p.change_id().short(8)).join(",") ++ "\n"'
+jj rebase -s <X-child> -o X      # reattach when it did not follow
+```
+
+Rules of thumb:
+
+- **Reordering within a stack? Use `jj rebase -r B --before A` (or `--after
+  A`).** That splices B in at the destination *and* heals the hole it left, in
+  one step — it is the right tool whenever you are moving a commit relative to
+  another commit, and it avoids this whole trap. See
+  [`reordering.md`](reordering.md).
+- **`-s` moves the subtree** (the commit *and* its descendants). Reach for
+  `-s` whenever you mean "move this and everything above it."
+- **`-r … -o` moves one commit and heals the hole behind it, but reattaches
+  nothing.** Only for lifting a commit out to an unrelated destination; after
+  using it, always verify the parentage of what used to sit above.
+- A merge that becomes redundant (`-r`'d so that one parent is now an ancestor
+  of another) does **not** auto-simplify its child's parents either — reparent
+  the child explicitly and confirm.
+
+### Rebuilding a rewritten commit from its pre-surgery original
+
+When a rebase resolution goes wrong partway up a long stack, do not hand-patch
+forward from the broken state. The original commits are still reachable by
+full commit id (record them with `jj log -r 'mutable()' -T commit_id` *before*
+starting). Replay each change's own delta onto its corrected parent:
+
+```bash
+jj edit <change>
+jj restore --from <its-new-parent>        # empty it
+git reset -q                              # colocated: refresh git's stale index
+git diff <old-parent-commit> <old-child-commit> > /tmp/delta.patch
+git apply --3way /tmp/delta.patch         # real 3-way conflicts, with a base
+```
+
+`git apply --3way` gives ordinary `<<<<<<< ours / ||||||| base / >>>>>>> theirs`
+markers — far easier to resolve correctly than a jj conflict whose "destination
+side" is empty, because you can see what the change actually intended. Verify
+the result by comparing `jj diff -r <change> --stat` against the original
+commit's diffstat; they should match closely.
 
 ### Restoring Files
 
@@ -469,6 +694,31 @@ jj edit <change-id>
 - Git may complain about uncommitted changes if jj's working copy differs from the git HEAD
 - ALWAYS ensure your work is committed in jj before switching to git
 - After git operations, jj will detect and incorporate the changes on next command
+
+#### NEVER `git checkout <path>` / `git restore <path>` to undo an edit
+
+In a colocated repo git's HEAD is `@-`, the **parent** of the working-copy
+commit — not the working copy. So `git checkout -- src/foo.rs` does not
+"undo my last edit to foo.rs"; it silently replaces the file with the
+parent commit's version, **destroying every uncommitted change in that
+file**, including hours of work unrelated to whatever you meant to revert.
+git prints nothing, and `jj st` afterwards just shows the file as no longer
+modified.
+
+The evolog is **not** a reliable safety net here: jj snapshots the working
+copy when a *jj command* runs, not when a file is written. A long stretch
+of Edit/Write/`cargo test` with no jj command in between leaves NOTHING in
+`jj evolog` to recover — the pre-checkout content never existed in a
+snapshot. (Observed live: `git checkout <path>` after a run of edits, and
+`jj evolog -r @` held only the state from before any of them.)
+
+Instead:
+- To drop a scratch block you appended: edit it back out with Edit/Write.
+- To revert a file to its parent's content **deliberately**: `jj restore
+  <path>` — same effect, but it is a jj operation, so it snapshots first
+  and lands in the op log where it can be recovered forward.
+- When making many edits without running jj, run a bare `jj st` at
+  checkpoints purely to force a snapshot.
 
 ### Pushing Changes
 
@@ -552,6 +802,58 @@ resolution as a discrete reviewable step before it's folded
 in, and avoids the working copy itself sitting on a conflicted
 commit while you think.
 
+### Amending a commit deep in a stack: snapshot the descendants first
+
+Editing or splitting a commit that has descendants auto-rebases
+them. Where a descendant touches the same region, that rebase
+conflicts — and hand-merging those markers is both error-prone
+and usually *unnecessary work*, because you already know what the
+descendant's file should contain: nothing about it changed, only
+its parent did.
+
+So **before** the surgery, save the final content of every file
+you're about to touch, for each descendant that also touches it:
+
+```bash
+# For each descendant D that touches the same files:
+jj file show -r <D> path/to/file.rs > /tmp/keep-<D>-file.rs
+```
+
+Do the surgery. Then, for each conflicted descendant, overwrite
+the conflicted file with the saved copy instead of merging markers:
+
+```bash
+jj edit <D>
+cp /tmp/keep-<D>-file.rs path/to/file.rs
+```
+
+jj recomputes that commit's diff against its *new* parent, so the
+descendant's content is preserved exactly while its diff shrinks to
+just its own delta. Verify with `jj log -r 'conflicts()'` (empty)
+and `jj diff -r <D> --stat`.
+
+**Only correct when the descendant's final content genuinely should
+not change.** That's the common case for a pure refactor or a fix
+extracted downward — the descendant wanted that content before and
+still does. But if the edit is meant to *propagate* (you fixed a bug
+the descendant also carries, or renamed something it calls), then
+restoring the old content silently reverts your fix in every commit
+above. Decide which case you're in per file, not per stack.
+
+Forgot to snapshot first? Recover forward — the pre-rebase content is
+still reachable. Find the operation just before the surgery and read
+the descendant's file as of then:
+
+```bash
+jj op log --no-graph -n 10 -T 'self.id().short() ++ "  " ++ self.description() ++ "\n"'
+jj log --no-graph -r 'at_operation(<op-id>, <D>)' -T 'commit_id ++ "\n"'
+jj file show -r <commit-id> path/to/file.rs > /tmp/keep-file.rs
+```
+
+This is the same forward-recovery idea as *Recovering data without
+`jj op restore`* above, used deliberately rather than in a panic —
+and it is why you still never need `jj undo` here.
+
 ### Self-resolving conflicts and empty commits
 
 A conflict in commit A can sometimes be "resolved" by a
@@ -604,6 +906,36 @@ by its global change ID (an `@`-relative revset like `trunk()..@`
 won't see a sibling workspace's work)**, and the post-rebase scope
 check that `CLAUDE.md` points here for.
 
+**Setting a repo up for workspaces the first time** — creating
+the `.workspaces/` directory, or noticing that a new workspace
+costs a full cold build — is a separate, rarer job: read
+[`workspace-setup.md`](workspace-setup.md). It covers the
+ignore-before-first-add ordering (and the `jj file untrack`
+recovery if you missed it), the fact that `jj workspace add`
+won't create the parent directory, and the per-ecosystem build
+config that keeps a new workspace cheap. Read it **before
+pointing two workspaces of a Rust project at one build
+directory**: registry dependencies do share correctly, but the
+repo's own crates collide on one artifact slot, so a workspace
+whose sources are older than a sibling's last build gets
+`Finished` and the *sibling's* binary — which is exactly the
+workspace that only runs tests.
+
+## Cross-workspace infrastructure
+
+When you are **building tooling that coordinates across sibling
+workspaces** — a lock so only one workspace runs something at a
+time, a shared queue or serialization point, a marker/cache set
+every workspace reads, anything that organizes or synchronizes
+`.workspaces/*` — read
+[`cross-workspace-infra.md`](cross-workspace-infra.md). It covers
+where shared state must live (the derived main checkout,
+gitignored, and the gitignore-bootstrap trap), why to use an OS
+advisory lock (`flock(2)` on an inherited fd, or a bound unix
+socket) instead of a hand-rolled PID/mkdir lockfile (reclaim
+TOCTOU + pid-reuse deadlock), and snapshot hygiene when your tool
+reads other checkouts.
+
 ## Preserving Commit Quality
 
 **IMPORTANT**: Because commits are mutable, always refine them:
@@ -620,8 +952,10 @@ check that `CLAUDE.md` points here for.
 |--------|---------|
 | Describe commit | `jj desc -m "message"` |
 | View status | `jj st` |
-| View log | `jj log` |
+| View log | `jj log` (revisions need `-r`; bare args are paths) |
 | View diff | `jj diff` |
+| View a commit's diff for some files | `jj diff -r <id> --git -- <path>` (**not** `jj show <id> <path>`) |
+| Compare two commits | `jj diff --from <a> --to <b>` (**not** `-r 'a..b'`) |
 | New commit | `jj st` then `jj new` only if `@` has changes, then `jj desc -m "message"` |
 | Edit commit | `jj edit <id>` |
 | Squash to parent | `jj squash` |

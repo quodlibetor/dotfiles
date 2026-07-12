@@ -92,6 +92,25 @@ If you must investigate before asking:
 - Avoid `jj diff --from xxx/0 --to xxx/1` for comparing
   divergent variants — see the next subsection.
 
+### Keeping *both* variants — `jj metaedit --update-change-id`
+
+The three patterns above all end with one variant surviving.
+When both are real and both should live, there is a fourth
+option: mint a fresh change ID for one of them, so the two
+stop being variants of a single change at all.
+
+```bash
+jj metaedit --update-change-id -r xxx/2
+```
+
+`jj metaedit` edits a revision's metadata without touching its
+content, so no work is rewritten and nothing is abandoned —
+the divergence resolves because there is now one commit per
+change ID. Prefer this to abandoning whenever the answer to
+"which one do I keep?" is "both." Confirm with `jj st` (no
+longer `(divergent)`) and re-describe the new change, since it
+inherits the old description.
+
 ## Pitfall: `jj diff --from X --to Y` across divergent siblings
 
 `jj diff --from A --to B` shows the tree difference between
@@ -111,6 +130,21 @@ jj show xxx/N             # description + full patch
 
 These describe what the variant changes, independent of its
 parent's history.
+
+To compare the two variants *against each other* despite the
+differing parents, reach for **`jj interdiff`** — it compares
+what two revisions *do*, not their raw trees, so the unrelated
+parent history drops out:
+
+```bash
+jj interdiff --from xxx/0 --to xxx/2          # whole change
+jj interdiff --from xxx/0 --to xxx/2 -- path  # scoped (it takes filesets)
+```
+
+This is the tool the `--from/--to` pitfall above should send
+you to. An empty interdiff means the two variants make the
+same change and differ only in where they sit — the safe case
+for abandoning one.
 
 ## Sanity checks after resolution
 

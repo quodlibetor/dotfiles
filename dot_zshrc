@@ -287,6 +287,14 @@ fi
 if (( $+commands[nvim] )); then
     alias -r vim=nvim
     export EDITOR=nvim
+    # nv hands files to the nvim session that already owns their project
+    # (emacsclient style -- see ~/.config/nvim/lua/nv/init.lua). nvw is the
+    # blocking form, so commit messages land in that session too. Plain `nvim`
+    # stays unrouted as the escape hatch.
+    if (( $+commands[nv] )); then
+        alias -r vim=nv
+        export EDITOR=nvw VISUAL=nvw
+    fi
 else
     export EDITOR=vim
 fi
@@ -451,7 +459,13 @@ function frg {
     file=${result%%:*}
     linenumber=$(echo "${result}" | cut -d: -f2)
     if [[ -n "$file" ]]; then
-        $EDITOR +"${linenumber}" "$file"
+        # nv, not $EDITOR: $EDITOR is the blocking form (nvw) so git/jj can
+        # use it, and there is nothing to wait for when just opening a hit.
+        if (( $+commands[nv] )); then
+            nv +"${linenumber}" "$file"
+        else
+            $EDITOR +"${linenumber}" "$file"
+        fi
     fi
 }
 

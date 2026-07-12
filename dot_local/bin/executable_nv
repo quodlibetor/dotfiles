@@ -1,0 +1,109 @@
+#!/usr/bin/env zsh
+# nv -- emacsclient for nvim. Each project gets a headless session that holds
+# its buffers and LSP clients; `nv` attaches a TUI to that session in whatever
+# pane you are standing in, and leaving detaches instead of quitting.
+#
+#   nv [+LINE] [FILE ...]     attach here, showing FILE
+#   nvw ... / nv --wait       attach and block until the buffer closes ($EDITOR)
+#   nv --new ...              a private nvim, no session
+#   nv --where                which session owns this directory
+#   nv --list                 every session running on this machine
+#   nv --kill                 end this project's session
+#
+# In the session :q, :q!, :wq and ZZ detach and leave it running; :qa ends it,
+# as does nv --kill. Root detection and the session side live in
+# ~/.config/nvim/lua/nv/.
+
+emulate -L zsh
+
+local client=${NV_CLIENT_LUA:-$HOME/.config/nvim/lua/nv/client.lua}
+local -a args
+local wait=0 new=0 where=0 kill_it=0 list=0
+
+[[ ${0:t} == nvw ]] && wait=1
+
+while (( $# )); do
+    case $1 in
+        --wait) wait=1 ;;
+        --no-wait) wait=0 ;;
+        --new) new=1 ;;
+        --where) where=1 ;;
+        --list) list=1 ;;
+        --kill) kill_it=1 ;;
+        -h | --help)
+            sed -n '2,16p' ${0:A} | sed -e 's/^# //' -e 's/^#$//'
+            exit 0
+            ;;
+        --)
+            shift
+            args+=("$@")
+            break
+            ;;
+        # +LINE routes; any other +cmd is nvim's business.
+        +[0-9]*) args+=("$1") ;;
+        # A genuine nvim flag (-d, -R, -u ...): don't try to route it.
+        -* | +*)
+            new=1
+            args+=("$1")
+            ;;
+        *) args+=("$1") ;;
+    esac
+    shift
+done
+
+if [[ ! -r $client ]]; then
+    (( where || kill_it || list )) && { print -u2 "nv: no client script at $client"; exit 1 }
+    exec nvim "${args[@]}"
+fi
+
+(( where )) && NV_WHERE=1 exec nvim -u NONE -l $client -- "${args[@]}"
+(( list )) && NV_LIST=1 exec nvim -u NONE -l $client -- "${args[@]}"
+(( kill_it )) && NV_KILL=1 exec nvim -u NONE -l $client -- "${args[@]}"
+
+# Attaching is only wrong when this nvim would be reading stdin: a piped
+# `nv -`, or a bare `nv` with input redirected.
+local piped=0
+[[ -t 0 ]] || piped=1
+if (( new || ${args[(I)-]} )) || (( piped && ${#args} == 0 )); then
+    exec nvim "${args[@]}"
+fi
+
+local plan
+plan=$(NV_WAIT=$wait nvim -u NONE -l $client -- "${args[@]}")
+local rc=$?
+
+# 11: the session is up and holding our files; put a UI on it here.
+if (( rc == 11 )); then
+    local -a p
+    p=("${(@f)plan}")
+    local sock=$p[1] token=$p[2]
+
+    # Backgrounded so we keep the pid, but with the terminal handed back to it:
+    # job control is off in a script, so it stays in our process group and owns
+    # the tty like any foreground child.
+    nvim --server $sock --remote-ui </dev/tty &
+    local ui=$!
+    # Tell the session which process to kill when this pane's UI goes away: a
+    # detached TUI freezes instead of exiting, and ignores SIGTERM.
+    nvim --server $sock --remote-expr \
+        "luaeval(\"require('nv').bind_client(_A[1], _A[2])\", ['$token', $ui])" >/dev/null 2>&1
+
+    wait $ui
+    local urc=$?
+
+    # After a SIGKILL the terminal is still in raw mode on the alternate screen.
+    stty sane </dev/tty 2>/dev/null
+    printf '\033[?1000l\033[?1002l\033[?1003l\033[?1006l\033[?2004l\033[?1049l\033[?25h\033[0m'
+    (( urc == 137 && wait == 0 )) && print -u2 "nv: detached; session still running (nv --kill ends it)"
+    exit 0
+fi
+
+# 10: no session possible, so just be an editor. The client hands back the argv
+# it resolved (absolute paths, +LINE from `file:12` specs).
+if (( rc == 10 )); then
+    local -a nvargs
+    [[ -n $plan ]] && nvargs=("${(@f)plan}")
+    exec nvim "${nvargs[@]}"
+fi
+
+exit $rc

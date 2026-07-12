@@ -54,6 +54,39 @@ jj workspace list --template \
 jj workspace root --name <name>
 ```
 
+## An empty, undescribed commit is not litter — check `jj workspace list` first
+
+An empty commit with no description is the **default shape of any
+idle workspace's working copy**. It is indistinguishable, by
+`jj log` alone, from the scratch commit your own `jj new` left
+behind. So before abandoning one, ask who owns it:
+
+```bash
+jj workspace list   # names + working-copy commit of every workspace
+```
+
+Abandoning another workspace's working-copy commit does **not**
+remove it. jj immediately creates a fresh empty commit at the same
+parent for that workspace, with a **new change id** — so the
+"litter" appears to come back, which invites abandoning it again,
+and again. That loop is the tell:
+
+> abandon → an empty commit reappears at the same parent under a
+> different change id → **stop and run `jj workspace list`**
+
+While the commit is empty this costs no content, but it marks that
+workspace **stale**; whoever owns it needs `jj workspace
+update-stale` before working there. If it were *not* empty you
+would be destroying that workspace's uncommitted work — which is
+why the check comes before the abandon, not after the surprise.
+
+Real litter is worth less cleanup than you think, too: an empty,
+undescribed working-copy commit in *your* workspace is
+auto-abandoned when you `jj new`/`jj edit` elsewhere, so a loop
+that visits many commits leaves at most the one it stopped on.
+If more than one is lying around, that is evidence they are not
+all yours.
+
 ## Inspect another workspace — two tools, opposite purposes
 
 Cross-workspace views are **stale by default**: a jj command only

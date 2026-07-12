@@ -802,6 +802,166 @@ resolution as a discrete reviewable step before it's folded
 in, and avoids the working copy itself sitting on a conflicted
 commit while you think.
 
+**Only the conflict *roots* need resolving.** A descendant is
+conflicted because it inherited an unresolved ancestor, so
+clearing the ancestor clears the whole chain above it — one
+rebase that reports 27 conflicted commits is often 3 real
+resolutions. After each `jj squash`, jj names the next root
+for you (`Hint: … start by creating a commit on top of the
+first conflicted commit: jj new <id>`); follow that rather
+than working down the `conflicts()` list by hand.
+
+### A resolved descendant is an oracle for its conflicted ancestors
+
+When some commit *above* the conflicts already holds a
+hand-resolved tree for the same files — a megamerge, or any
+later commit whose content survived the rebase — it has
+already answered the question each ancestor is now asking.
+Read the intended final content out of it instead of
+reasoning the merge out from scratch:
+
+```bash
+jj log -r <tip> -T 'commit_id ++ "\n"'   # RECORD THIS FIRST — see below
+jj file show -r <tip> path/to/file.rs    # what the merge is supposed to produce
+```
+
+It settles exactly the judgement calls that are expensive to
+get right by hand: which side's ordering wins, whether a
+comment one side deleted stays deleted, whether an import gets
+unioned or replaced.
+
+Two limits. The oracle says how the two sides *combine*, not
+what any single commit should contain — an ancestor gets only
+the part of that content its own stack contributes, so a
+CHANGELOG whose oracle lists eight bullets may owe just two to
+the commit you're resolving. And it is silent about whether
+the result *builds*; see the check below.
+
+**Record the tip's commit id before you start** — resolutions
+rebase every descendant, so the change id will point at new
+content by the time you want to compare. Then, when you're
+done, the payoff:
+
+```bash
+jj diff --from <recorded-tip-commit-id> --to <tip-change-id> --stat
+#   → "0 files changed" proves every resolution reproduced the
+#     tree that already existed. Anything else is a real
+#     divergence to explain.
+```
+
+If the tip itself ends up conflicted at the end (its own
+recorded resolution no longer matches its rewritten parents),
+don't re-merge it by hand — restore its own prior content and
+fold that in:
+
+```bash
+jj new <tip>
+jj restore --from <recorded-tip-commit-id> <paths...>
+jj squash --use-destination-message
+```
+
+**A byte-identical tip is evidence about content, not about
+correctness — build every rewritten commit.** The tip can be
+perfect while a commit in the middle no longer compiles,
+because a rebase relocates lines without understanding them.
+Observed: trunk added an `opts.cherry_pick = …` assignment to
+a function, a local commit had meanwhile *extracted* the
+surrounding body into a new function taking `opts` by value,
+and the rebase dropped trunk's line into the extracted
+function — three commits stopped compiling, while the tip was
+fine because a sibling branch had independently made the same
+signature change. Walk the stack afterwards:
+
+```bash
+jj log -r 'trunk()..<heads>' --no-graph -T 'change_id.short(8) ++ "\n"' | tac \
+  | while read -r c; do jj new "$c" >/dev/null 2>&1
+      cargo check --all-targets >/dev/null 2>&1 \
+        && echo "OK   $c" || echo "FAIL $c"
+    done
+```
+
+(`jj new` per commit rather than `jj edit`: an empty,
+undescribed working-copy commit is auto-abandoned when you
+move off it, so the loop leaves at most the one it stopped on.
+Fix a failure at the commit that introduced it, not at the head
+that shows it.)
+
+**Do not sweep up "leftover" empty commits without running `jj
+workspace list` first.** An empty, undescribed commit is also the
+resting shape of any idle *sibling workspace's* working copy, and
+abandoning one of those doesn't remove it — jj recreates it at the
+same parent under a new change id, so it looks like the litter came
+back and invites an abandon loop. Nothing is lost while the commit
+is empty, but each pass marks that workspace stale. See
+[`workspaces.md`](workspaces.md).
+
+Before blaming the rebase for a lint or test failure, check
+whether the new trunk already had it — `jj new trunk()` and
+run the same command there.
+
+### Splitting a feature back out of a merge commit
+
+Work sometimes lands *in* a merge commit — you merge two lines because
+the feature needs both, then resolve conflicts and build on top in the
+same commit. Its diff is then resolutions and feature tangled together,
+which reviews badly. To separate them you need each touched file's
+**pre-feature** content, and where that comes from differs by file:
+
+- **Conflicted files** — the resolution you wrote. If a descendant
+  megamerge already resolved the same merge, read it from there (the
+  oracle pattern above). Otherwise re-derive it.
+- **Unconflicted files** — the *auto-merge* result, which is not any
+  parent's version and exists in no commit. Materialise it in a
+  throwaway: `jj new <parentA> <parentB>`, copy the files out, abandon
+  it. Guessing "it's the same as parent B" is how content goes missing.
+
+Then: restore the pre-feature content into the merge, `jj new` on top,
+write the feature content back. Verify with the tree, not by eye —
+
+```bash
+jj diff --from <old-merge-commit-id> --to <new-child> --stat   # → 0 files changed
+```
+
+Record `<old-merge-commit-id>` **before** you start; the change id will
+point at the stripped merge by the time you want to compare.
+
+**`jj file show -r X path > path` truncates before jj runs.** The shell
+empties the file, then jj starts and snapshots the working copy — so the
+empty file momentarily *becomes* commit content, and an editor/LSP
+watching the tree may report a burst of nonsense errors. The end state is
+correct and the next command re-snapshots, so don't chase those errors;
+just re-read the file to confirm before believing a diagnostic.
+
+### Reparenting a megamerge onto a commit that subsumes some parents
+
+Given a megamerge on `[A, B, C, D]` and a new commit `E` that already
+contains `A` and `B`, `jj rebase -r <megamerge> -d E -d C -d D` is right —
+one parent per logical line, no duplicated reachability. **Expect it to
+conflict.** The megamerge's stored diff is its resolutions *for the old
+auto-merge*, and re-applying those over a parent that already resolves
+them 3-way conflicts almost everywhere.
+
+Do not hand-merge those markers. Every file's correct content is already
+known somewhere, so resolve by provenance:
+
+- touched only by the lines `E` subsumes → take `E`'s version
+- touched by other parents too, and unchanged by whatever `E` added →
+  take the **old megamerge's** version
+- touched by everything *and* changed by `E` → old megamerge's version
+  with `E`'s edits reapplied (usually one or two files: a CHANGELOG, a
+  wiring module)
+
+Then prove it, rather than trusting the count of conflicts you cleared:
+
+```bash
+jj diff --from <old-megamerge-commit-id> --to <megamerge> --stat
+#   → exactly the files E added, and nothing else
+```
+
+A megamerge should also *shrink* when you do this: resolutions that moved
+into `E` stop being its problem. If its own diff didn't get smaller,
+something was resolved in the wrong direction.
+
 ### Amending a commit deep in a stack: snapshot the descendants first
 
 Editing or splitting a commit that has descendants auto-rebases

@@ -62,7 +62,13 @@ jj log -r "$change | parents($change)"
 #   (mine() ~ ::main@origin)::  -> my commits not yet in main, plus descendants
 #   ::heads(@::) ~ ::main@origin -> @'s whole stack (tip = heads(@::)), unmerged
 # union, restrict to mutable, take roots so `rebase -s` carries each stack.
-pull = ["util", "exec", "--", "bash", "-c", """
+pull = [
+  "util",
+  "exec",
+  "--",
+  "bash",
+  "-c",
+  """
 set -e
 jj git fetch
 src="roots(((mine() ~ ::main@origin):: | (::heads(@::) ~ ::main@origin)) & mutable())"
@@ -71,7 +77,28 @@ if [ -n "$(jj log --no-graph -r "$src" -T commit_id)" ]; then
 else
   echo "pull: nothing of mine to rebase, everything is already on main"
 fi
-"""]
+""",
+]
+
+# Track spr-pushed remote bookmarks, but only ones pointing at my commits —
+# auto-track-bookmarks is name-pattern-only, so it can't express `mine()`.
+track-my-spr = [
+  "util",
+  "exec",
+  "--",
+  "bash",
+  "-c",
+  '''
+set -e
+names=$(jj log --no-graph -r 'remote_bookmarks(glob:"spr/*") & mine()' \
+  -T 'remote_bookmarks.filter(|b| b.name().starts_with("spr/") && !b.tracked()).map(|b| b.name() ++ "@" ++ b.remote()).join(" ") ++ " "')
+if [ -n "${names// /}" ]; then
+  echo "$names" | xargs jj bookmark track
+else
+  echo "track-my-spr: nothing to track"
+fi
+''',
+]
 
 #
 # megamerge support: https://isaaccorbrey.com/notes/jujutsu-megamerges-for-fun-and-profit
@@ -95,6 +122,7 @@ restack = [
   "--source",
   "roots(trunk()..) & mutable()",
 ]
+spr = ["util", "exec", "--", "jj-spr"]
 
 [revsets]
 log = "working_mine"
@@ -103,6 +131,9 @@ log = "working_mine"
 draft_commit_description = "builtin_draft_commit_description_with_diff"
 
 [revset-aliases]
+# spr-pushed branches are untracked remote bookmarks, which the builtin
+# treats as immutable; keep them editable since spr rewrites them anyway.
+"immutable_heads()" = 'builtin_immutable_heads() ~ remote_bookmarks(glob:"spr/*")'
 "closest_merge(to)" = "heads(::to & merges())"
 # All "working" branches that include at least one of my commits
 # * immutable_heads().. -> commits that are not ancestors of any immutable head
@@ -113,7 +144,14 @@ draft_commit_description = "builtin_draft_commit_description_with_diff"
 #     “working changes” that lie on any connected branch containing at least one of my commits.
 # * ancestors(my_changes, 2) -> show the change on trunk() that they diverged from
 my_branches = 'reachable(mine() & immutable_heads().., immutable_heads()..)'
-working_mine = 'ancestors(@, 3) | ancestors(my_branches, 2) | trunk()::@ | trunk()::(trunk():: & mine())'
+# Synthetic commits created by jj-spr: each PR gets a "[spr] changes to
+# main..." base commit plus a copy of the real commit on top, both bookmarked
+# under spr.branchPrefix. Stack-bottom PRs based directly on main get no
+# "[spr]" base, so also match origin branches under the prefix — but only ones
+# with no local bookmark, so plain push-a-bookmark PRs stay visible. bwmspr/ is
+# reserved for jj-spr and always hidden. Never hide ancestors of @.
+spr_synth = 'trunk()..(descendants(description(regex:"^\\[spr\\]")) | (remote_bookmarks(glob:"bwm/*", remote="origin") ~ bookmarks()) | bookmarks(glob:"bwmspr/*") | remote_bookmarks(glob:"bwmspr/*")) ~ ::@'
+working_mine = '(ancestors(@, 3) | ancestors(my_branches, 2) | trunk()::@ | trunk()::(trunk():: & mine())) ~ spr_synth'
 # Branches not merged into trunk() that contain at least one of my commits
 working_from_trunk = 'reachable(mine() ~ ::trunk(), trunk()..)'
 

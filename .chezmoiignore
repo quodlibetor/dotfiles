@@ -1,5 +1,5 @@
-/install-base
-/install.sh
-/legacy
-/scratch
+install-base
+install.sh
+legacy
+scratch
 .local/bin/README-GIT-STACK.md

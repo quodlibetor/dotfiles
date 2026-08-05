@@ -61,7 +61,12 @@ jj log -r "$change | parents($change)"
 # onto the freshly-fetched main.
 #   (mine() ~ ::main@origin)::  -> my commits not yet in main, plus descendants
 #   ::heads(@::) ~ ::main@origin -> @'s whole stack (tip = heads(@::)), unmerged
-# union, restrict to mutable, take roots so `rebase -s` carries each stack.
+# union, restrict to mutable, drop jj-spr's synthetic commits, take roots so
+# `rebase -s` carries each stack.
+#   ~ spr_synth -> jj-spr's bases/copies are mine, mutable and off main, so they
+#   land in the set above; rebasing them is pointless churn (spr rewrites them
+#   on the next `jj spr diff`) and can conflict. Subtract *before* roots() so a
+#   whole synthetic chain drops out instead of its copies becoming new roots.
 pull = [
   "util",
   "exec",
@@ -71,7 +76,7 @@ pull = [
   """
 set -e
 jj git fetch
-src="roots(((mine() ~ ::main@origin):: | (::heads(@::) ~ ::main@origin)) & mutable())"
+src="roots((((mine() ~ ::main@origin):: | (::heads(@::) ~ ::main@origin)) & mutable()) ~ spr_synth)"
 if [ -n "$(jj log --no-graph -r "$src" -T commit_id)" ]; then
   jj rebase --skip-emptied --simplify-parents -s "$src" -o main@origin
 else
@@ -126,6 +131,12 @@ spr = ["util", "exec", "--", "jj-spr"]
 
 [revsets]
 log = "working_mine"
+# Unset, this falls back to `log` (working_mine), which is evaluated on *every*
+# jj command. A cheap structural superset of working_mine instead:
+#   trunk()::            covers trunk()::@ and trunk()::(trunk():: & mine())
+#   ancestors(mutable(), 3)  covers ancestors(@, 3) and ancestors(my_branches, 2)
+#                            (my_branches ⊆ immutable_heads().. ⊆ mutable())
+short-prefixes = "trunk():: | ancestors(mutable(), 3)"
 
 [templates]
 draft_commit_description = "builtin_draft_commit_description_with_diff"
@@ -150,7 +161,10 @@ my_branches = 'reachable(mine() & immutable_heads().., immutable_heads()..)'
 # "[spr]" base, so also match origin branches under the prefix — but only ones
 # with no local bookmark, so plain push-a-bookmark PRs stay visible. bwmspr/ is
 # reserved for jj-spr and always hidden. Never hide ancestors of @.
-spr_synth = 'trunk()..(descendants(description(regex:"^\\[spr\\]")) | (remote_bookmarks(glob:"bwm/*", remote="origin") ~ bookmarks()) | bookmarks(glob:"bwmspr/*") | remote_bookmarks(glob:"bwmspr/*")) ~ ::@'
+# The `trunk().. &` inside descendants() is a performance guard: jj can't push
+# the outer `trunk()..` bound through descendants(), so without it the regex is
+# tested against every commit in the repo (~4.5s per evaluation in helm3-platform).
+spr_synth = 'trunk()..(descendants(trunk().. & description(regex:"^\\[spr\\]")) | (remote_bookmarks(glob:"bwm/*", remote="origin") ~ bookmarks()) | bookmarks(glob:"bwmspr/*") | remote_bookmarks(glob:"bwmspr/*")) ~ ::@'
 working_mine = '(ancestors(@, 3) | ancestors(my_branches, 2) | trunk()::@ | trunk()::(trunk():: & mine())) ~ spr_synth'
 # Branches not merged into trunk() that contain at least one of my commits
 working_from_trunk = 'reachable(mine() ~ ::trunk(), trunk()..)'

@@ -165,7 +165,7 @@ my_branches = 'reachable(mine() & immutable_heads().., immutable_heads()..)'
 # the outer `trunk()..` bound through descendants(), so without it the regex is
 # tested against every commit in the repo (~4.5s per evaluation in helm3-platform).
 spr_synth = 'trunk()..(descendants(trunk().. & description(regex:"^\\[spr\\]")) | (remote_bookmarks(glob:"bwm/*", remote="origin") ~ bookmarks()) | bookmarks(glob:"bwmspr/*") | remote_bookmarks(glob:"bwmspr/*")) ~ ::@'
-working_mine = '(ancestors(@, 3) | ancestors(my_branches, 2) | trunk()::@ | trunk()::(trunk():: & mine())) ~ spr_synth'
+working_mine = '(ancestors(@, 3) | ancestors(my_branches, 2) | ancestors(trunk(), 3)::@ | ancestors(trunk(), 2)::(trunk():: & mine())) ~ spr_synth'
 # Branches not merged into trunk() that contain at least one of my commits
 working_from_trunk = 'reachable(mine() ~ ::trunk(), trunk()..)'
 

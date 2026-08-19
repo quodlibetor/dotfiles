@@ -122,11 +122,13 @@ end
 config.color_schemes = root_loops_themes
 
 local tabline = wezterm.plugin.require("https://github.com/michaelbrusegard/tabline.wez")
-tabline.setup({
+local tabline_opts = {
   options = {
     icons_enabled = true,
     -- Pass the theme table directly; tabline only auto-resolves
     -- builtin scheme names, not ones registered via config.color_schemes.
+    -- Table themes need tabline >= v1.5; older clones reject them, which
+    -- setup_tabline below recovers from.
     theme = root_loops_themes[theme],
     color_overrides = {},
     section_separators = {
@@ -164,8 +166,28 @@ tabline.setup({
     tabline_z = { 'hostname' },
   },
   extensions = {},
-})
-tabline.apply_to_config(config)
+}
+
+-- wezterm never auto-updates plugin clones, so any given host can be running a
+-- tabline old enough to reject the theme table above. Left unguarded, that
+-- error aborts the whole config and wezterm silently falls back to its built-in
+-- defaults, dropping every setting below this point. Notably default_prog,
+-- whose loss makes each pane a login shell that reprints the DevSpace banner.
+local function setup_tabline()
+  tabline.setup(tabline_opts)
+  tabline.apply_to_config(config)
+end
+
+if not pcall(setup_tabline) then
+  wezterm.log_error(
+    'tabline rejected the theme table (plugin clone is likely stale); '
+      .. 'falling back to a builtin scheme. Fix with wezterm.plugin.update_all().'
+  )
+  tabline_opts.options.theme = 'Catppuccin Mocha'
+  if not pcall(setup_tabline) then
+    wezterm.log_error('tabline setup failed entirely; continuing without a tabline.')
+  end
+end
 config.font = wezterm.font("JetBrains Mono")
 
 config.color_scheme = theme

@@ -165,7 +165,19 @@ my_branches = 'reachable(mine() & immutable_heads().., immutable_heads()..)'
 # the outer `trunk()..` bound through descendants(), so without it the regex is
 # tested against every commit in the repo (~4.5s per evaluation in helm3-platform).
 spr_synth = 'trunk()..(descendants(trunk().. & description(regex:"^\\[spr\\]")) | (remote_bookmarks(glob:"bwm/*", remote="origin") ~ bookmarks()) | bookmarks(glob:"bwmspr/*") | remote_bookmarks(glob:"bwmspr/*")) ~ ::@'
-working_mine = '(ancestors(@, 3) | ancestors(my_branches, 2) | ancestors(trunk(), 3)::@ | ancestors(trunk(), 2)::(trunk():: & mine())) ~ spr_synth'
+# Parked work: branches whose tip is a stash/* bookmark. `& visible_heads()`
+# is the leaf test -- a stash bookmark with anything stacked on top of it is no
+# longer a visible head, so the chain stops being hidden the moment it goes
+# back to being real work (rather than leaving an elided gap under the new
+# commits). Cheap: visible_heads() comes straight from the view, and the outer
+# trunk().. bounds the ancestor walk. See `stashes` to look at them.
+stash_branches = 'trunk()..(::((bookmarks(glob:"stash/*") | remote_bookmarks(glob:"stash/*")) & visible_heads()))'
+# ancestors(_, 2) adds each branch's actual base commit, which may be older
+# than the current trunk(); trunk() itself is there for orientation.
+stashes = 'ancestors(stash_branches, 2) | trunk()'
+# `~ (stash_branches ~ ::@)`: hide parked branches, but never ancestors of @,
+# so a stash stays visible while you're sitting on it.
+working_mine = '(ancestors(@, 3) | ancestors(my_branches, 2) | ancestors(trunk(), 3)::@ | ancestors(trunk(), 2)::(trunk():: & mine())) ~ spr_synth ~ (stash_branches ~ ::@)'
 # Branches not merged into trunk() that contain at least one of my commits
 working_from_trunk = 'reachable(mine() ~ ::trunk(), trunk()..)'
 

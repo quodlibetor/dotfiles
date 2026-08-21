@@ -92,6 +92,53 @@ local function copy_paths(paths, what)
   end
 end
 
+-- Trailer keys (normalized to lowercase, single-space) whose value is a URL
+-- worth opening in a browser.
+local URL_TRAILER_KEYS = {
+  ["pull request"] = true,
+}
+
+-- URLs from `Key: URL` trailer lines whose key is in URL_TRAILER_KEYS, in the
+-- order they appear, deduplicated. jj keeps trailers as ordinary description
+-- lines, so this is a scan rather than anything jj can query for us.
+local function trailer_urls(description)
+  local urls, seen = {}, {}
+  for _, line in ipairs(split_lines(description)) do
+    local key, value = line:match("^%s*(%a[%w%s_-]*):%s*(%S+)%s*$")
+    if key then
+      key = key:lower():gsub("[%s_-]+", " ")
+    end
+    if key and URL_TRAILER_KEYS[key] and value:match("^https?://") and not seen[value] then
+      seen[value] = true
+      urls[#urls + 1] = value
+    end
+  end
+  return urls
+end
+
+-- Hand a URL to $BROWSER without disturbing the TUI: detached, so jjui isn't
+-- blocked waiting on it; stdout kept on the terminal, because $BROWSER may be a
+-- shim that talks to the terminal emulator rather than opening a window itself
+-- (weztermopen writes an OSC escape, invisible here just like the clipboard one
+-- above); stderr dropped, so a chatty browser can't garble the UI.
+local function open_url(url)
+  local browser = os.getenv("BROWSER")
+  if not browser or browser == "" then
+    browser = "xdg-open %s 2>/dev/null || open %s"
+  end
+  local quoted = shquote(url)
+  local line
+  if browser:find("%%s") then
+    -- freedesktop convention: %s is where the URL goes.
+    line = (browser:gsub("%%s", function()
+      return quoted
+    end))
+  else
+    line = browser .. " " .. quoted
+  end
+  os.execute("({ " .. line .. " ; } >/dev/tty 2>/dev/null &)")
+end
+
 function setup(config)
   config.action("copy-change-id", function()
     local short_id = context.change_id()
@@ -183,5 +230,38 @@ function setup(config)
     key = { "e", "alt+e" },
     scope = "revisions.details",
     desc = "edit file in $EDITOR",
+  })
+
+  config.action("open-pull-request", function()
+    local change_id = context.change_id()
+    if not change_id or change_id == "" then
+      flash({ text = "No change selected", error = true })
+      return
+    end
+    local description, err = jj("log", "-r", change_id, "--no-graph", "--ignore-working-copy", "-T", "description")
+    if not description then
+      flash({ text = "Failed to read description: " .. (err or "unknown"), error = true })
+      return
+    end
+    local urls = trailer_urls(description)
+    if #urls == 0 then
+      -- change_id here is the shortest unique prefix, too terse to name in a
+      -- message; the highlighted row is the change anyway.
+      flash({ text = "No pull request trailer in this change", error = true })
+      return
+    end
+    local url = urls[1]
+    if #urls > 1 then
+      url = choose({ title = "Which URL?", options = urls, ordered = true })
+      if not url then
+        return
+      end
+    end
+    open_url(url)
+    flash("Opening " .. url)
+  end, {
+    key = "O",
+    scope = "revisions",
+    desc = "open pull request in $BROWSER",
   })
 end

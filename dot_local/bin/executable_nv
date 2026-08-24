@@ -81,6 +81,7 @@ if (( rc == 11 )); then
     # Backgrounded so we keep the pid, but with the terminal handed back to it:
     # job control is off in a script, so it stays in our process group and owns
     # the tty like any foreground child.
+    local saved=$(stty -g </dev/tty 2>/dev/null)
     nvim --server $sock --remote-ui </dev/tty &
     local ui=$!
     # Tell the session which process to kill when this pane's UI goes away: a
@@ -91,9 +92,35 @@ if (( rc == 11 )); then
     wait $ui
     local urc=$?
 
-    # After a SIGKILL the terminal is still in raw mode on the alternate screen.
-    stty sane </dev/tty 2>/dev/null
-    printf '\033[?1000l\033[?1002l\033[?1003l\033[?1006l\033[?2004l\033[?1049l\033[?25h\033[0m'
+    # nvim puts the terminal back itself when it exits, but this UI never gets
+    # to: ending a detached TUI means SIGKILL (see nv.on_ui_leave), so every
+    # mode it turned on is still set and the termios it swapped out is still
+    # gone. Restore both by hand, mirroring nvim's own teardown.
+    if [[ -n $saved ]]; then
+        stty "$saved" </dev/tty 2>/dev/null
+    else
+        stty sane </dev/tty 2>/dev/null
+    fi
+    local -a restore=(
+        '\e[?2026l'  # finish any half-drawn synchronized frame, so the rest lands
+        '\e[<u'      # pop the kitty keyboard flags nvim pushed with \e[>3u. Left
+                     # set, ctrl+d arrives as \e[100;5u and the shell looks deaf
+                     # to every control character.
+        '\e[>4;0m'   # modifyOtherKeys: the same job, on terminals without \e[>u
+        '\e[?1l'     # cursor keys back to normal (DECCKM)
+        '\e>'        # keypad back to numeric (DECKPNM)
+        '\e[?1000l\e[?1002l\e[?1003l\e[?1006l' # mouse reporting
+        '\e[?1004l'  # focus in/out reports
+        '\e[?2004l'  # bracketed paste
+        '\e[?2027l'  # grapheme cluster handling
+        '\e[?2048l'  # in-band resize reports
+        '\e[?2031l'  # theme-change notifications
+        '\e[?1049l'  # leave the alternate screen
+        '\e[0 q'     # cursor shape back to the terminal's default
+        '\e[?25h'    # cursor visible
+        '\e[0m'      # attributes off
+    )
+    printf "${(j::)restore}" >/dev/tty
     (( urc == 137 && wait == 0 )) && print -u2 "nv: detached; session still running (nv --kill ends it)"
     exit 0
 fi

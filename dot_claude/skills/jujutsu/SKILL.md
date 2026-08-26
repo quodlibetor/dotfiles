@@ -1072,8 +1072,8 @@ costs a full cold build — is a separate, rarer job: read
 [`workspace-setup.md`](workspace-setup.md). It covers the
 ignore-before-first-add ordering (and the `jj file untrack`
 recovery if you missed it), the fact that `jj workspace add`
-won't create the parent directory, and the per-ecosystem build
-config that keeps a new workspace cheap. Read it **before
+won't create the parent directory, and what each ecosystem does
+and does not let you share between workspaces. Read it **before
 pointing two workspaces of a Rust project at one build
 directory**: registry dependencies do share correctly, but the
 repo's own crates collide on one artifact slot, so a workspace

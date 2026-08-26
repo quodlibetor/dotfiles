@@ -23,8 +23,7 @@ so `mkdir -p .workspaces` first on a repo that has never had one
 (otherwise it fails with `Cannot access …` naming the *target*,
 when it's the parent that's missing). First-time setup of the
 `.workspaces/` directory — the ignore entry it needs before the
-first add, and the build-cache config that keeps each new
-workspace cheap — is in
+first add, and what is safe to share between workspaces — is in
 [`workspace-setup.md`](workspace-setup.md).
 
 ```bash

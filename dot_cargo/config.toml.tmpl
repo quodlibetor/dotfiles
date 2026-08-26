@@ -1,0 +1,7 @@
+[build]
+rustc-wrapper = "kache"
+{{ if eq .chezmoi.os "linux" }}
+[target.'cfg(all(target_os = "linux", target_env = "gnu"))']
+linker = "clang"
+rustflags = ["-C", "link-arg=--ld-path=wild"]
+{{- end }}

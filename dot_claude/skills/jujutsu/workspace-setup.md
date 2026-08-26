@@ -4,15 +4,14 @@ Creating a workspace should cost a few seconds and a few
 megabytes, not a full dependency install and a cold build. That
 is a property of the *containing directory*, set up once per
 repo, not of each `jj workspace add`. This file covers that
-one-time setup and the per-ecosystem build-cache config that
-makes each new workspace cheap.
+one-time setup and what each ecosystem does and does not let you
+share between workspaces.
 
 The layout every other file in this skill assumes:
 
 ```
 <main>/                     ← the default workspace (the repo checkout)
-  .workspaces/              ← ignored; holds everything below
-    .cargo/config.toml      ← per-ecosystem build config, if any
+  .workspaces/              ← ignored; holds the workspaces below
     <name>/                 ← an actual jj workspace
       target/               ← build output stays INSIDE the workspace
 ```
@@ -23,12 +22,11 @@ any sibling — `main="${root%%/.workspaces/*}"`, see
 [`cross-workspace-infra.md`](cross-workspace-infra.md) — and
 makes teardown a single `rm -rf .workspaces/<name>`.
 
-## One-time bootstrap, in this order
+## One-time bootstrap: ignore `.workspaces/` before the first add
 
-Order matters: step 1 must happen **before** the first
-`jj workspace add`.
-
-### 1. Create and Ignore `.workspaces/` first
+This must happen **before** the first `jj workspace add`, and it
+is the only setup step — no ecosystem below needs a per-repo
+build config.
 
 jj does not create intermediate directories when `jj workspace add
 path/to/workspace` is invoked.
@@ -36,9 +34,8 @@ path/to/workspace` is invoked.
 jj skips *nested workspaces'* working copies when it snapshots
 the main checkout — `.workspaces/feat/`'s files never appear in
 `jj st` at the top level. But it does **not** ignore
-`.workspaces/` itself, so anything else you put there (the
-`.cargo/config.toml` below, logs, scratch output) snapshots
-straight into the main checkout's `@`.
+`.workspaces/` itself, so anything else you put there (logs,
+scratch output) snapshots straight into the main checkout's `@`.
 
 Create a workspace and immediately gitignore it:
 
@@ -59,13 +56,7 @@ jj file untrack '.workspaces'
 
 This is the same bootstrap trap described in
 [`cross-workspace-infra.md`](cross-workspace-infra.md); it bites
-here because the build config and the build cache both land
-under an un-ignored directory.
-
-### 2. Add the per-ecosystem build config
-
-See the sections below. For Rust this is a **question to ask the
-user**, not a default to pick — see *Ask first*.
+here because build output lands under an un-ignored directory.
 
 ## The rule that decides what is safe to share
 
@@ -83,105 +74,47 @@ and cargo's mtime-based freshness check then hands you the
 | Ecosystem | Already shared, safe | Must stay per-workspace |
 |---|---|---|
 | Go | `GOCACHE`, `GOMODCACHE` (content-addressed, user-global) | nothing |
-| Rust | `~/.cargo/registry` (sources); compiled crates only via a rustc wrapper | `target/` — never share a build-dir, see below |
+| Rust | `~/.cargo/registry` (sources) and compiled crates (the global `kache` rustc wrapper) | `target/` — never share a build-dir, see below |
 | Node | the package manager's global store/cache | `node_modules/` |
 | Python | `~/.cache/uv`, wheel caches | `.venv/` |
 
 ## Rust
 
-### Ask first — this is a per-repo choice, not a default
+Nothing to configure per-repo. `kache` is a `rustc-wrapper` set
+globally in `$CARGO_HOME/config.toml`, so compiled crates are
+already shared across every checkout on the machine. It is
+content-addressed, so two workspaces with different sources get
+different entries, and a new workspace's first build mostly hits
+that cache instead of compiling cold.
 
-When setting up `.workspaces/` for a Rust repo, check for an
-existing `<main>/.workspaces/.cargo/config.toml`. If it is there,
-follow it; the choice has been made. If it is not, **ask before
-writing any config**:
-
-> This repo's workspaces can either **share compiled dependencies**
-> (via a `RUSTC_WRAPPER` cache — one copy of the compiled deps, and
-> a new workspace skips most of the cold build), or **keep
-> independent copies** (nothing to install, but every workspace
-> pays its own cold build and its own disk). Which fits this
-> project?
-
-The deciding factor is the size of the build directory, so lead
-with that rather than with the mechanism:
-
-- **Tens of GiB per build dir** → share. Two copies of an 80 GiB
-  target directory is 160 GiB, and that dominates everything else.
-- **Ordinary size** → independent copies. Simpler, nothing to
-  install, nothing extra to go wrong.
-
-If the user has no preference, pick independent copies.
-
-### Mode 1 — independent copies
-
-Nothing to configure. Leave `target/` inside each workspace: it
-is correct by construction, and teardown stays the
-`rm -rf .workspaces/<name>` you already do. Dependency *sources*
-are still shared via the user-global `~/.cargo/registry`, so a
-new workspace never re-downloads — it only re-compiles.
-
-### Mode 2 — share compiled artifacts with a rustc wrapper
-
-Sharing must happen at the **artifact** layer. Each workspace
-keeps its own `target/`, and a `RUSTC_WRAPPER` cache serves the
-compiled crates across workspaces.
-
-Requires [kache](https://github.com/kunobi-ninja/kache) on PATH
-(binary releases, or add it as a mise tool for the project).
-Then write `<main>/.workspaces/.cargo/config.toml`:
-
-```toml
-[build]
-rustc-wrapper = "kache"     # or an absolute path
-```
-
-Cargo finds this by walking up from `.workspaces/<name>/`, so it
-applies to every workspace and **not** to the main checkout,
-which sits above it. Relative paths in this file resolve against
-`.workspaces/`.
-
-Do **not** run `kache init` for this — it rewrites
-`$CARGO_HOME/config.toml` globally and installs a background
-daemon. The config above needs neither.
-
-Measured on a `regex` + `serde` project: 13.0s cold in the first
-workspace, 4.47s in the second, 12/12 entries hit. With
-*different* source per workspace, each still ran its own code.
-
-Caveat to state when recommending it: kache is Apache-2.0 and
-actively developed, but **pre-1.0 and young**. A rustc wrapper is
-exactly where a bug becomes a silently-wrong binary, so treat it
-as a considered bet rather than a safe default — which is part of
-why Mode 1 is the fallback.
-
-**Do not reach for `sccache` here.** It cannot share across
-checkouts and no configuration changes that: its Rust hasher
-deliberately hashes the cwd (*"The cwd of the compile. This will
-wind up in the rlib."*), and `SCCACHE_BASEDIRS` — which looks
-like precisely the fix — is implemented only for the C/C++ path,
-so it logs `Using basedirs for path normalization: [...]` and
-still returns zero cross-checkout hits.
+Leave `target/` inside each workspace. It is correct by
+construction, and teardown stays the `rm -rf .workspaces/<name>`
+you already do.
 
 ### Never point two workspaces at one cargo build-dir
 
-Whatever mode is chosen, do not "help" by setting `build-dir` or
-`target-dir` to a shared location, and do not accept a request to
-without flagging this. Two checkouts of one repo are the *same
-unit* to cargo — same package name and version — so they share a
-single artifact slot, and freshness is decided by mtime. The
-workspace whose files are older is told `Finished`, compiles
-nothing, and has its binary silently **replaced** with the other
-workspace's code. It survives `cargo test` and `cargo run`
-identically, so a workspace can test a sibling's binary and
-report green.
+Do not "help" by setting `build-dir` or `target-dir` to a shared
+location, and do not accept a request to without flagging this.
+Two checkouts of one repo are the *same unit* to cargo — same
+package name and version — so they share a single artifact slot,
+and freshness is decided by mtime. The workspace whose files are
+older is told `Finished`, compiles nothing, and has its binary
+silently **replaced** with the other workspace's code. It
+survives `cargo test` and `cargo run` identically, so a workspace
+can test a sibling's binary and report green.
 
 Splitting `target-dir` does not help (the collision is in the
 unit hash, which `build-dir` keys), and neither does the newer
 build-dir layout. Upstream: [rust-lang/cargo#12516][12516], open,
-"needs design".
+"needs design". That unfixed collision is the whole reason
+sharing has to happen at the rustc-wrapper layer instead.
 
 [12516]: https://github.com/rust-lang/cargo/issues/12516
+
+`sccache` is not an alternative here: its Rust hasher
+deliberately hashes the cwd, and `SCCACHE_BASEDIRS` — which looks
+like precisely the fix — is implemented only for the C/C++ path,
+so it returns zero cross-checkout hits.
 
 ## Go
 
@@ -226,7 +159,7 @@ Removing a workspace is the two steps in
 [`workspaces.md`](workspaces.md) — `jj workspace forget` **and**
 `rm -rf .workspaces/<name>`.
 
-On the defaults recommended here that is the whole job: build
+On the layout here that is the whole job: build
 output lives *inside* the workspace directory (`target/`,
 `node_modules/`, `.venv/`) and dies with it. That property is
 worth protecting. Any scheme that relocates build output to a

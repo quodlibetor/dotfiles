@@ -8,8 +8,13 @@
 -- row can name several. `w d` then offers them one at a time or together,
 -- leaving out the workspace holding the repo and the one jjui is in.
 --
--- jjui cannot cd its parent shell, so `w s` and `w c` write their destination
--- to $JJUI_CD_FILE and the `jjj` shell function moves there once jjui exits.
+-- `w a` and `w A` go the other way: they prompt for a name and put a new
+-- workspace at .workspaces/NAME in the main checkout, on top of the
+-- highlighted change.
+--
+-- jjui cannot cd its parent shell, so `w s`, `w c` and `w a` write their
+-- destination to $JJUI_CD_FILE and the `jjj` shell function moves there once
+-- jjui exits. `w A` switches jjui alone and leaves the shell where it is.
 
 local M = {}
 
@@ -264,7 +269,116 @@ local function remove(ws)
   return true, nil
 end
 
+-- Where new workspaces go: the main checkout's .workspaces, so one created
+-- from inside another workspace lands beside it rather than nested in it.
+local function workspaces_dir()
+  local holder, err = repo_root()
+  if not holder then
+    return nil, err
+  end
+  return holder .. "/.workspaces", nil
+end
+
+-- jj creates the workspace directory but not the directories above it, and
+-- anything unignored under .workspaces snapshots straight into the main
+-- checkout, so the parent is made and ignored here rather than assumed.
+local function prepare(dir)
+  if os.execute("mkdir -p " .. shquote(dir)) ~= 0 then
+    return false, "Cannot create " .. dir
+  end
+  local existing = io.open(dir .. "/.gitignore", "r")
+  if existing then
+    existing:close()
+    return true, nil
+  end
+  local handle = io.open(dir .. "/.gitignore", "w")
+  if not handle then
+    return false, "Cannot write " .. dir .. "/.gitignore"
+  end
+  handle:write("*\n")
+  handle:close()
+  return true, nil
+end
+
+-- Prompt for a name and add a workspace on top of the highlighted change,
+-- switching jjui to it. `follow` also leaves it for the shell to cd to.
+local function create(follow)
+  local change_id = context.change_id()
+  if not change_id or change_id == "" then
+    flash({ text = "No change selected", error = true })
+    return
+  end
+  local dir, dir_err = workspaces_dir()
+  if not dir then
+    flash({ text = dir_err, error = true })
+    return
+  end
+
+  local name = input({ title = "New workspace on " .. change_id, prompt = "name: " })
+  if not name then
+    return
+  end
+  name = name:gsub("^%s+", ""):gsub("%s+$", "")
+  if name == "" then
+    return
+  end
+  -- The name is both the workspace name and a path segment under .workspaces,
+  -- so anything that would reach outside that directory is not one.
+  if name:find("/") or name == "." or name == ".." then
+    flash({ text = "Not a workspace name: " .. name, error = true })
+    return
+  end
+
+  local root = dir .. "/" .. name
+  if os.execute("test -e " .. shquote(root)) == 0 then
+    flash({ text = root .. " already exists", error = true })
+    return
+  end
+  local ready, prep_err = prepare(dir)
+  if not ready then
+    flash({ text = prep_err, error = true })
+    return
+  end
+
+  local _, add_err = jj("workspace", "add", "--name", name, "-r", change_id, root)
+  if add_err then
+    flash({ text = "Failed to create " .. name .. ": " .. add_err, error = true })
+    return
+  end
+
+  local switched, switch_err = change_workspace(root)
+  revisions.refresh()
+  if not switched then
+    flash({ text = "Created " .. name .. ", but could not switch: " .. (switch_err or "unknown"), error = true })
+    return
+  end
+  if follow then
+    local recorded, cd_err = record_cd(root)
+    if not recorded then
+      flash({ text = name .. ": " .. cd_err, error = true })
+      return
+    end
+  end
+  flash("Workspace: " .. name)
+end
+
 function M.setup(config)
+  config.action("workspace-add", function()
+    create(true)
+  end, {
+    seq = { "w", "a" },
+    scope = "revisions",
+    desc = "add workspace on this change (shell follows on exit)",
+  })
+
+  config.action("workspace-add-keep-cwd", function()
+    create(false)
+  end, {
+    seq = { "w", "A" },
+    scope = "revisions",
+    desc = "add workspace on this change (shell stays put)",
+  })
+
   config.action("workspace-switch", function()
     local ws = target("Switch to workspace")
     if not ws then

@@ -5,6 +5,8 @@
 if [[ -n "${ZSH_VERSION:-}" && -z "${BASH_VERSION:-}" ]]; then
     typeset -U PATH
     extra_path=(
+        # mbx's cargo shim: fronts the Rust build cache, must precede any other cargo
+        "$HOME/.local/share/mbx/bin"
         "$HOME/.local/clang/bin"
         "$HOME/.local/bin"
         "$HOME/.cargo/bin"
@@ -36,8 +38,13 @@ if [[ -n "${ZSH_VERSION:-}" && -z "${BASH_VERSION:-}" ]]; then
     rehash
 else
     # we're in chezmoi initial setup, don't need to be as fancy
-    PATH="$HOME/.local/bin:${HOME}/.cargo/bin:${HOME}/.local/share/mise/shims:/home/linuxbrew/.linuxbrew/bin:${PATH}"
+    PATH="$HOME/.local/share/mbx/bin:$HOME/.local/bin:${HOME}/.cargo/bin:${HOME}/.local/share/mise/shims:/home/linuxbrew/.linuxbrew/bin:${PATH}"
 fi
+
+# Cache natively-linked binaries and proc macros, not just rustc invocations. On by
+# default, but mbx refuses this key in its config file, so it is pinned here where a
+# future default flip cannot quietly turn it off.
+export MBX_CACHE_LINKS=1
 
 # needs to be at the end because commandlinetools overwrites the llvm that cargo wants, I think
 CLT_BIN=/Library/Developer/CommandLineTools/usr/bin

@@ -2,6 +2,9 @@
 experimental = true
 go_set_gobin = true
 
+[wrappers]
+cargo = { command = "mbx", env = { MBX_CARGO_SHIM_MODE = "1" } }
+
 [tools]
 "aqua:grafana/gcx" = "latest"
 # TODO: switch to upstream mdserve when my PRs are merged
@@ -14,7 +17,6 @@ go_set_gobin = true
 "github:golangci/golangci-lint" = "latest"
 "github:ilyagr/diffedit3" = "latest"
 "github:jesseduffield/lazygit" = "latest"
-"github:kunobi-ninja/kache" = "latest"
 "github:michel-kraemer/zsh-patina" = "latest"
 "github:quodlibetor/git-instafix" = "latest"
 "github:quodlibetor/s3glob" = "latest"
@@ -35,6 +37,7 @@ jj = { version = "latest", minimum_release_age = "0m" }
 jjui = "latest"
 jq = "latest"
 k9s = "latest"
+mr-boxington = { version = "latest", minimum_release_age = "0m", postinstall = "mbx setup --yes" }
 node = "latest"
 op = "latest"
 python = "latest"
@@ -66,5 +69,11 @@ zoxide = "latest"
 btop = "latest"
 delta = "latest"
 fd = "latest"
+# mbx points its linker selection at this install, so mise owns the version
 "github:wild-linker/wild" = "latest"
 {{- end }}
+
+# Written by `mbx setup`: puts mbx's cargo shim ahead of rustup's in every mise scope.
+# ~/.zshenv covers the shells mise does not activate.
+[env._]
+path = ["~/.local/share/mbx/bin"]

@@ -1,7 +1,2 @@
-[build]
-rustc-wrapper = "kache"
-{{ if eq .chezmoi.os "linux" }}
-[target.'cfg(all(target_os = "linux", target_env = "gnu"))']
-linker = "clang"
-rustflags = ["-C", "link-arg=--ld-path=wild"]
-{{- end }}
+# Deliberately empty, and kept so that chezmoi overwrites anything an earlier setup left
+# here. mbx wraps cargo itself; its settings, including the linker, live in the mbx config.

@@ -74,22 +74,25 @@ and cargo's mtime-based freshness check then hands you the
 | Ecosystem | Already shared, safe | Must stay per-workspace |
 |---|---|---|
 | Go | `GOCACHE`, `GOMODCACHE` (content-addressed, user-global) | nothing |
-| Rust | `~/.cargo/registry` (sources) and compiled crates (the global `kache` rustc wrapper) | `target/` — never share a build-dir, see below |
+| Rust | `~/.cargo/registry` (sources) and compiled crates (the global `mbx` cargo shim) | `target/` — never share a build-dir, see below; `mbx` gives each checkout its own |
 | Node | the package manager's global store/cache | `node_modules/` |
 | Python | `~/.cache/uv`, wheel caches | `.venv/` |
 
 ## Rust
 
-Nothing to configure per-repo. `kache` is a `rustc-wrapper` set
-globally in `$CARGO_HOME/config.toml`, so compiled crates are
-already shared across every checkout on the machine. It is
-content-addressed, so two workspaces with different sources get
-different entries, and a new workspace's first build mostly hits
-that cache instead of compiling cold.
+Nothing to configure per-repo. `mbx` (mr-boxington) installs a
+`cargo` shim on `PATH`, so every `cargo` command on the machine
+draws from one content-addressed store — two workspaces with
+different sources get different entries, and a new workspace's
+first build mostly hits that store instead of compiling cold.
+Settings live in `~/.config/mbx/config.toml` (chezmoi-managed),
+never in a repo.
 
-Leave `target/` inside each workspace. It is correct by
-construction, and teardown stays the `rm -rf .workspaces/<name>`
-you already do.
+The first `cargo` run in a checkout that already has a real
+`target/` directory asks whether to replace it with a managed
+link; say yes. Non-interactive runs never prompt, so an agent
+will not convert a checkout behind your back — it just keeps
+using the directory that is there.
 
 ### Never point two workspaces at one cargo build-dir
 
@@ -107,7 +110,7 @@ Splitting `target-dir` does not help (the collision is in the
 unit hash, which `build-dir` keys), and neither does the newer
 build-dir layout. Upstream: [rust-lang/cargo#12516][12516], open,
 "needs design". That unfixed collision is the whole reason
-sharing has to happen at the rustc-wrapper layer instead.
+sharing has to happen in the cache layer, below cargo, instead.
 
 [12516]: https://github.com/rust-lang/cargo/issues/12516
 

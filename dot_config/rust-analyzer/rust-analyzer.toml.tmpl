@@ -1,0 +1,3 @@
+# Written by `mbx setup`: rust-analyzer's background checks share the build cache.
+# The absolute shim path is deliberate — editors do not get mise's PATH activation.
+check = { overrideCommand = ["/home/coder/.local/share/mbx/bin/cargo", "check", "--workspace", "--all-targets", "--target-dir", "target/rust-analyzer", "--message-format=json"] }

@@ -1,0 +1,36 @@
+# docs: https://mr-boxington.jdx.dev/configuration
+{{ if stat "/mnt/cache" -}}
+cache_dir = "/mnt/cache/mbx"
+{{ end -}}
+cc = true
+build_script_execution = true
+share_out_dir = true
+# Without this a compilation records which checkout it ran in, so a workspace member
+# rebuilt in a second checkout comes out with different bytes and everything downstream
+# of it misses. The cost is that source paths in debug information and panic messages
+# name a placeholder instead of the checkout.
+share_workspace_root = true
+
+[gc]
+auto = true
+max_size = "50GiB"
+max_total_size = "100GiB"
+
+[target]
+# No `root` here on purpose: it defaults to <cache_dir>/targets, which keeps managed
+# targets on the same btrfs volume as the store so restores clone instead of copying.
+max_size = "50GiB"
+
+[scheduler]
+enabled = true
+{{ $wild := joinPath .chezmoi.homeDir ".local/share/mise/installs/github-wild-linker-wild/latest/wild" }}
+{{- if stat $wild }}
+# Links go through wild, chosen here rather than with cargo's `linker =`: a `-C linker=` on
+# the rustc command line is an option mbx's adapter does not model, so it denies by default
+# and every compilation in the build bypasses the cache. A selection mbx makes itself stays
+# out of the compile key and enters only native-link identity, which follows the binary's
+# contents, so a mise upgrade of wild invalidates link entries by itself. A selected linker
+# that is missing is an error rather than a fallback, hence the stat.
+[linker]
+default = "path:{{ $wild }}"
+{{- end }}

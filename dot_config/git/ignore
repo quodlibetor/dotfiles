@@ -3,6 +3,7 @@ scratch
 _scratch
 /.tool-versions
 mise.local.toml
+/.cargo-target
 bacon.toml
 # vcs
 .subgit

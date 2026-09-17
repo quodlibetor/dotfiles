@@ -264,4 +264,7 @@ function setup(config)
     scope = "revisions",
     desc = "open pull request in $BROWSER",
   })
+
+  -- `w`-prefixed workspace commands; ~/.config/jjui is on package.path.
+  require("workspaces").setup(config)
 end

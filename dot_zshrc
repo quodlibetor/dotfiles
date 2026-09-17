@@ -470,7 +470,19 @@ function frg {
 }
 
 alias jjab="jj ab"
-alias jjj="JJUI=1 jjui"
+# jjui's `w s`/`w c` (see ~/.config/jjui/workspaces.lua) write the workspace
+# they moved to into $JJUI_CD_FILE; a child process cannot cd its parent, so
+# the move happens here once jjui exits.
+jjj() {
+  local cdfile dest rc
+  cdfile=$(mktemp "${TMPDIR:-/tmp}/jjui-cd.XXXXXX") || return
+  JJUI=1 JJUI_CD_FILE=$cdfile jjui "$@"
+  rc=$?
+  dest=$(<"$cdfile")
+  rm -f -- "$cdfile"
+  [[ -n $dest && -d $dest ]] && cd -- "$dest"
+  return $rc
+}
 
 alias gitab="git ab"
 alias mdserve="mdserve --standalone --open"

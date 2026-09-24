@@ -94,4 +94,10 @@ export RIPGREP_CONFIG_PATH="$HOME/.config/ripgreprc"
 export GIT_INSTAFIX_UPSTREAM=origin/main
 export GOENV_DISABLE_PATH_WARNING=1
 
+# Lacework DevSpaces: skip the lw-doctor welcome checks on every new terminal,
+# and the system version managers that mise replaces. Read by the DevSpace
+# /etc/zsh startup files, which run after this one; inert everywhere else.
+LW_DOCTOR_SKIP=1
+LW_PROFILE_SKIP="nvm pyenv goenv"
+
 unset __cmd_exists

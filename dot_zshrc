@@ -166,7 +166,14 @@ __bwm_cached_eval() {
 }
 
 if (( $+commands[mise] )); then
-  __bwm_cached_eval mise-activate "$commands[mise]" mise activate zsh
+  # `mise activate` opens by exporting the PATH it ran with. Cached, that would
+  # pin every later shell to a stale PATH, so drop those lines: the rest of the
+  # script reads the live PATH, and its closing hook-env recomputes it.
+  __bwm_mise_activate() {
+    command mise activate zsh | grep -v -e '^export __MISE_ORIG_PATH=' -e '^export PATH='
+  }
+  __bwm_cached_eval mise-activate-livepath "$commands[mise]" __bwm_mise_activate
+  unfunction __bwm_mise_activate
 
   # mise's precmd/chpwd hooks spawn `mise hook-env` (~68ms) on every prompt and
   # cd. Wrap them so we only call mise when the set of config files (or their

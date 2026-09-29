@@ -596,6 +596,10 @@ Rules of thumb:
   one step — it is the right tool whenever you are moving a commit relative to
   another commit, and it avoids this whole trap. See
   [`reordering.md`](reordering.md).
+- **Slotting a whole stack in under a commit** ("rebase it behind
+  `default@`") is one command: `jj rebase -b TIP -B default@`. First check
+  that `TIP` is the stack's only head, or `default@` becomes a merge; see
+  [`reordering.md`](reordering.md).
 - **`-s` moves the subtree** (the commit *and* its descendants). Reach for
   `-s` whenever you mean "move this and everything above it."
 - **`-r … -o` moves one commit and heals the hole behind it, but reattaches

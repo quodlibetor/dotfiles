@@ -53,8 +53,7 @@ zoxide = "latest"
 
 # the various sprs
 "github:ejoffe/spr" = "latest"
-# "cargo:https://github.com/jennings/jj-spr.git" = "branch:main"
-"cargo:https://github.com/quodlibetor/jj-spr.git" = "branch:bwmmain"
+"cargo:https://github.com/quodlibetor/jj-spr" = "branch:bwmmain"
 
 {{- if not (or (stat (joinPath .chezmoi.homeDir ".local/bin/vcs-status-daemon"))
                (stat (joinPath .chezmoi.homeDir ".cargo/bin/vcs-status-daemon"))) }}

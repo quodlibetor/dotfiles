@@ -67,6 +67,10 @@ jj log -r "$change | parents($change)"
 #   land in the set above; rebasing them is pointless churn (spr rewrites them
 #   on the next `jj spr diff`) and can conflict. Subtract *before* roots() so a
 #   whole synthetic chain drops out instead of its copies becoming new roots.
+#   ~ (pull_skip | -x args):: -> stacks to leave where they are (e.g. hotfix
+#   branches); pull_skip defaults to none(), override it in repo config. Also
+#   subtracted before roots() so the skipped commits' children don't become roots.
+# Usage: jj pull [-x|--exclude REVSET]...
 pull = [
   "util",
   "exec",
@@ -75,14 +79,24 @@ pull = [
   "-c",
   """
 set -e
+skip="none()"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -x|--exclude) [ -n "$2" ] || { echo "pull: $1 needs a revset" >&2; exit 2; }
+                  skip="$skip | ($2)"; shift 2 ;;
+    *) echo "pull: unknown arg: $1" >&2; exit 2 ;;
+  esac
+done
 jj git fetch
-src="roots((((mine() ~ ::main@origin):: | (::heads(@::) ~ ::main@origin)) & mutable()) ~ spr_synth)"
-if [ -n "$(jj log --no-graph -r "$src" -T commit_id)" ]; then
+src="roots(((((mine() ~ ::main@origin):: | (::heads(@::) ~ ::main@origin)) & mutable()) ~ spr_synth) ~ (pull_skip | $skip)::)"
+roots=$(jj log --no-graph -r "$src" -T commit_id)
+if [ -n "$roots" ]; then
   jj rebase --skip-emptied --simplify-parents -s "$src" -o main@origin
 else
   echo "pull: nothing of mine to rebase, everything is already on main"
 fi
 """,
+  "--",
 ]
 
 # Track spr-pushed remote bookmarks, but only ones pointing at my commits —
@@ -171,6 +185,8 @@ spr_synth = 'trunk()..(descendants(trunk().. & description(regex:"^\\[spr\\]")) 
 # back to being real work (rather than leaving an elided gap under the new
 # commits). Cheap: visible_heads() comes straight from the view, and the outer
 # trunk().. bounds the ancestor walk. See `stashes` to look at them.
+# Stacks `jj pull` leaves in place; override per repo with `jj config set --repo`.
+pull_skip = 'none()'
 stash_branches = 'trunk()..(::((bookmarks(glob:"stash/*") | remote_bookmarks(glob:"stash/*")) & visible_heads()))'
 # ancestors(_, 2) adds each branch's actual base commit, which may be older
 # than the current trunk(); trunk() itself is there for orientation.

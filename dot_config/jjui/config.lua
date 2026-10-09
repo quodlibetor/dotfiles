@@ -139,6 +139,35 @@ local function open_url(url)
   os.execute("({ " .. line .. " ; } >/dev/tty 2>/dev/null &)")
 end
 
+-- Short change ids of a revset, one per element.
+local function short_ids(revset)
+  local out = jj("log", "-r", revset, "--no-graph", "--ignore-working-copy", "-T", 'change_id.short(8) ++ "\n"')
+  local ids = {}
+  for _, line in ipairs(split_lines(out or "")) do
+    if line ~= "" then
+      ids[#ids + 1] = line
+    end
+  end
+  return ids
+end
+
+-- The chain the highlighted change belongs to, as `first::last`: first is
+-- where it leaves trunk, last is the furthest non-empty change above it, so a
+-- trailing empty working copy is left out. Falls back to the symbolic revset
+-- when the chain forks and there is no single answer to name.
+local function default_chain(change_id)
+  local tip = "heads((" .. change_id .. ":: ~ empty()) | " .. change_id .. ")"
+  local tips = short_ids(tip)
+  if #tips ~= 1 then
+    return "trunk().." .. tip
+  end
+  local roots = short_ids("roots(trunk().." .. tips[1] .. ")")
+  if #roots ~= 1 then
+    return "trunk().." .. tips[1]
+  end
+  return roots[1] .. "::" .. tips[1]
+end
+
 function setup(config)
   config.action("copy-change-id", function()
     local short_id = context.change_id()
@@ -263,6 +292,46 @@ function setup(config)
     key = "O",
     scope = "revisions",
     desc = "open pull request in $BROWSER",
+  })
+
+  -- A change that already has a PR updates just that PR; anything else
+  -- prompts for the revset to submit, prefilled with its chain.
+  config.action("spr-update-message", function()
+    local change_id = context.change_id()
+    if not change_id or change_id == "" then
+      flash({ text = "No change selected", error = true })
+      return
+    end
+    local description, err = jj("log", "-r", change_id, "--no-graph", "--ignore-working-copy", "-T", "description")
+    if not description then
+      flash({ text = "Failed to read description: " .. (err or "unknown"), error = true })
+      return
+    end
+    local revset = change_id
+    if #trailer_urls(description) == 0 then
+      revset = input({ title = "jj-spr diff --update-message", prompt = "revset: ", value = default_chain(change_id) })
+      if not revset then
+        return
+      end
+      revset = revset:gsub("^%s+", ""):gsub("%s+$", "")
+      if revset == "" then
+        return
+      end
+    end
+    local message = input({ title = "jj-spr diff -r " .. revset, prompt = "message (empty for none): " })
+    if not message then
+      return
+    end
+    message = message:gsub("^%s+", ""):gsub("%s+$", "")
+    local line = "jj-spr diff --update-message -r " .. shquote(revset)
+    if message ~= "" then
+      line = line .. " --message " .. shquote(message)
+    end
+    exec_shell(line)
+  end, {
+    key = "z",
+    scope = "revisions",
+    desc = "jj-spr diff --update-message",
   })
 
   -- `w`-prefixed workspace commands; ~/.config/jjui is on package.path.
